@@ -1,0 +1,2290 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>شفرة الدوال</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&family=STIX+Two+Text:ital,wght@0,500;1,500&display=swap">
+<style>
+/* ==========================================================================
+   شفرة الدوال — الهوية البصرية
+   تخطيط: خريطة مدينة عمودية متعرجة فوق أفق مضيء، ولوحات HUD زجاجية داكنة.
+   اللعبة تلتزم بعالم بصري واحد: مدينة مستقبلية بألوان الباستيل (وردي، بنفسجي، سماوي، نعناعي).
+   ========================================================================== */
+:root {
+  --bg: #fdf5ff;
+  --bg-2: #f6ecff;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-solid: #ffffff;
+  --line: rgba(175, 150, 225, 0.38);
+  --line-strong: rgba(160, 130, 225, 0.62);
+  --ink: #3b3260;
+  --mute: #7a7199;
+  --cyan: #5fc3e8;
+  --cyan-ink: #2b86ad;
+  --violet: #b79cff;
+  --ok: #6fdcb4;
+  --ok-ink: #25946f;
+  --warn: #ffc27a;
+  --warn-ink: #b0690f;
+  --bad: #ff8fb1;
+  --bad-ink: #c0386a;
+  --pink: #ee7fb8;
+  --grid: rgba(175, 150, 225, 0.24);
+  --axis: rgba(110, 90, 170, 0.65);
+  --f-display: "Reem Kufi", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --f-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-math: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
+  --r: 16px;
+  --glow: 0 0 22px rgba(95, 195, 232, 0.4);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.75;
+  padding-block: 0 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  z-index: 40;
+}
+h1, h2, h3, p, dl, dd, ul { margin: 0; padding: 0; }
+ul { list-style: none; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; line-height: 1.3; text-wrap: balance; }
+button, input { font: inherit; color: inherit; }
+.mono { font-family: var(--f-mono); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
+[data-focus]:focus { outline: none; }
+
+/* ---------- الخلفية: سماء + مدينة ---------- */
+#sky {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(2px 2px at 12% 18%, #ffb8dc 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 28% 8%, #c5aeff 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 44% 22%, #ffd98a 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 61% 12%, #9fdcf5 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 76% 26%, #ffb8dc 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 88% 9%, #c5aeff 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 6% 40%, #9fdcf5 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 93% 44%, #ffd98a 50%, transparent 51%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(255, 190, 225, 0.5), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgba(168, 225, 248, 0.55), transparent 70%),
+    linear-gradient(180deg, #eaf5ff 0%, #f6eeff 55%, #ffeaf6 100%);
+}
+#city {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 0;
+  height: min(60vh, 560px); pointer-events: none;
+}
+#city svg { width: 100%; height: 100%; display: block; }
+#city .bld.far rect { fill: #e6dcff; }
+#city .bld.mid > rect:not(.win) { fill: #d9ccfb; }
+#city .bld.near > rect:not(.win) { fill: #cbbcf6; }
+#city .win { fill: #f4eeff; transition: fill 0.9s ease; }
+#city .win.on.c0 { fill: var(--cyan); }
+#city .win.on.c1 { fill: var(--violet); }
+#city .win.on.c2 { fill: #ffe3a3; }
+#city .win.fl { animation: flick 3.2s steps(1) infinite; }
+#city .beacon { fill: var(--bad); animation: pulse 1.8s ease-in-out infinite; }
+#city[data-full="1"] .beacon { fill: var(--cyan); }
+body[data-screen="station"] #city,
+body[data-screen="cert"] #city { opacity: 0.45; }
+body[data-screen="story"] #city { opacity: 0.7; }
+#city { transition: opacity 0.6s ease; }
+
+@keyframes flick { 0%, 100% { fill: #f4eeff; } 8% { fill: #ffe9bd; } 10% { fill: #f4eeff; } 55% { fill: #f4eeff; } 57% { fill: #ffd0e2; } 60% { fill: #f4eeff; } }
+@keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+.app { position: relative; z-index: 1; }
+.wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; padding-block: 18px 0; }
+.screen { animation: enter 0.55s ease both; }
+.screen[hidden] { display: none !important; }
+@keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- مكونات عامة ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  min-width: 0;
+}
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--mute); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.eyebrow.warn { color: var(--warn-ink); }
+.eyebrow.ok { color: var(--ok-ink); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row.center { justify-content: center; }
+.row.between { justify-content: space-between; }
+
+.btn {
+  appearance: none; cursor: pointer; border-radius: 10px; padding: 10px 18px; min-height: 44px;
+  font-weight: 600; border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.85); color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.btn:hover { box-shadow: 0 0 0 1px var(--cyan), var(--glow); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--cyan); color: #2e2557; border-color: var(--cyan); box-shadow: var(--glow); }
+.btn.primary:hover { background: #8fd6f1; }
+.btn.ghost { background: transparent; }
+.btn.danger { border-color: var(--bad); color: #c0386a; }
+.btn.danger:hover { box-shadow: 0 0 0 1px var(--bad); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.big { font-size: 20px; padding: 14px 40px; min-height: 56px; border-radius: 12px; }
+.btn.back { align-self: flex-start; }
+
+.pill { font-family: var(--f-body); font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--line-strong); letter-spacing: 0; }
+.pill.open { color: var(--cyan-ink); border-color: var(--cyan); }
+.pill.done { color: var(--ok-ink); border-color: var(--ok); }
+.pill.locked { color: var(--mute); }
+
+.bar { position: relative; height: 8px; border-radius: 99px; background: rgba(175, 150, 230, 0.22); overflow: hidden; min-width: 60px; }
+.bar i { position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: linear-gradient(90deg, var(--violet), var(--cyan)); box-shadow: 0 0 12px var(--cyan); transition: width 0.9s ease; }
+[dir="rtl"] .bar i { inset: 0 0 0 auto; }
+.bar.wide { height: 12px; }
+
+/* ---------- HUD ---------- */
+.hud {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
+  margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  background: rgba(253, 245, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.hud-in { max-width: 980px; margin-inline: auto; display: flex; align-items: center; gap: 14px 22px; flex-wrap: wrap; padding-block: 8px; }
+.hud-brand { background: none; border: 0; cursor: pointer; font-family: var(--f-display); font-weight: 700; font-size: 20px; color: var(--cyan-ink); padding: 4px 0; }
+.hud-power { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 0; }
+.hud-power .bar { flex: 1; }
+.hud-label { font-size: 13px; color: var(--mute); white-space: nowrap; }
+.hud-power b { font-family: var(--f-mono); font-size: 14px; min-width: 3.4ch; text-align: end; font-variant-numeric: tabular-nums; }
+.hud-stats { display: flex; gap: 18px; }
+.hud-stats div { display: flex; gap: 6px; align-items: baseline; font-size: 13px; }
+.hud-stats dt { color: var(--mute); }
+.hud-stats dd { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---------- شاشة البداية ---------- */
+.intro { max-width: 760px; margin-inline: auto; padding-block: clamp(40px, 9vh, 110px) 40px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+.intro .tag { color: var(--cyan-ink); letter-spacing: 0.4em; font-size: 14px; margin: 0; }
+.intro h1 {
+  font-size: clamp(3.4rem, 15vw, 7.5rem); line-height: 1.1; color: var(--ink);
+  text-shadow: 0 0 18px rgba(95, 195, 232, 0.55), 0 0 60px rgba(183, 156, 255, 0.5);
+  animation: boot 2.6s steps(1) 1 both;
+}
+@keyframes boot { 0% { opacity: 0.1; } 6% { opacity: 1; } 9% { opacity: 0.2; } 14% { opacity: 1; } 18% { opacity: 0.4; } 22%, 100% { opacity: 1; } }
+.tagline { font-size: clamp(1.1rem, 3.4vw, 1.6rem); color: var(--ink); max-width: 30ch; text-wrap: balance; }
+.sys-lines { display: grid; gap: 6px; width: min(100%, 360px); font-family: var(--f-mono); font-size: 14px; margin-block: 8px; }
+.sys-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 12px; background: rgba(255, 255, 255, 0.78); border: 1px solid var(--line); border-radius: 8px; }
+.sys-lines span { font-family: var(--f-body); color: var(--mute); }
+.sys-lines .bad { color: var(--bad-ink); animation: pulse 1.6s ease-in-out infinite; }
+.sys-lines .warn { color: var(--warn-ink); }
+.intro .btn.big { margin-top: 10px; animation: ready 2.4s ease-in-out infinite; }
+@keyframes ready { 0%, 100% { box-shadow: 0 0 16px rgba(95, 195, 232, 0.35); } 50% { box-shadow: 0 0 36px rgba(95, 195, 232, 0.8); } }
+
+/* ---------- المقدمة ---------- */
+.story { max-width: 720px; margin: clamp(24px, 8vh, 80px) auto 0; display: flex; flex-direction: column; gap: 14px; border-color: rgba(255, 194, 122, 0.75); }
+.story h2 { font-size: 1.8rem; }
+.story-text { font-size: 1.15rem; line-height: 2; min-height: 11em; }
+
+/* ---------- الخريطة ---------- */
+.map {
+  position: relative; border: 1px solid var(--line); border-radius: var(--r);
+  height: max(560px, calc(var(--rows, 6) * 112px));
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 48px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 48px 100%,
+    rgba(255, 255, 255, 0.5);
+}
+.paths { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.seg { fill: none; stroke: rgba(183, 156, 255, 0.45); stroke-width: 3; stroke-dasharray: 3 9; stroke-linecap: round; }
+.seg.on { stroke: var(--cyan); stroke-dasharray: none; filter: drop-shadow(0 0 6px var(--cyan)); }
+.node {
+  position: absolute; transform: translate(-50%, -50%); background: none; border: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; width: 132px; padding: 4px; color: var(--ink); text-align: center;
+}
+.plate {
+  position: relative; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--ring, var(--cyan)) var(--f, 0deg), rgba(175, 150, 230, 0.28) 0);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.95);
+  transition: transform 0.2s ease;
+}
+.plate::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--panel-solid); }
+.plate .ico { position: relative; width: 30px; height: 30px; color: var(--ring, var(--cyan)); }
+.plate .num { position: absolute; top: -6px; inset-inline-start: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line-strong); font: 600 12px/22px var(--f-mono); text-align: center; color: var(--mute); }
+.nlabel { font-weight: 700; font-size: 14px; line-height: 1.4; margin-top: 4px; text-shadow: 0 1px 6px #fff; }
+.nstate { font-size: 12px; color: var(--mute); }
+.node.open { --ring: var(--cyan); }
+.node.open .plate { animation: ready 2.2s ease-in-out infinite; }
+.node.done { --ring: var(--ok); }
+.node.done .nstate { color: var(--ok-ink); }
+.node.locked { --ring: #a9a2c8; }
+.node.locked .nlabel { color: var(--mute); }
+.node:hover .plate, .node.sel .plate { transform: scale(1.08); }
+.node.sel .plate { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.95), 0 0 0 7px var(--warn); }
+
+.zone { display: flex; flex-direction: column; gap: 12px; }
+.zc-head { display: flex; gap: 14px; align-items: center; }
+.zc-head h2 { font-size: 1.6rem; }
+.zc-icon { width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--line-strong); color: var(--cyan-ink); background: rgba(95, 195, 232, 0.08); }
+.zc-icon .ico { width: 28px; height: 28px; }
+.zone[data-state="done"] .zc-icon { color: var(--ok-ink); border-color: var(--ok); background: rgba(111, 220, 180, 0.08); }
+.zone[data-state="locked"] .zc-icon { color: var(--mute); }
+.zc-fault { color: var(--ink); }
+.zc-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.zc-meta div { background: rgba(255, 255, 255, 0.66); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: 0; }
+.zc-meta dt { font-size: 12px; color: var(--mute); }
+.zc-meta dd { font-weight: 600; }
+.zc-lock { color: var(--warn-ink); display: flex; gap: 8px; align-items: center; }
+.ico.inline { width: 18px; height: 18px; flex: none; }
+.zone .btn { align-self: flex-start; }
+
+.progress { display: flex; flex-direction: column; gap: 14px; }
+.progress h2 { font-size: 1.3rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.stats div { background: rgba(255, 255, 255, 0.66); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.stats dt { font-size: 12px; color: var(--mute); }
+.stats dd { font-family: var(--f-display); font-size: 1.7rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.sub { font-size: 1rem; display: flex; gap: 10px; align-items: baseline; }
+.codes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.codes li { display: flex; flex-direction: column; border: 1px dashed var(--line-strong); border-radius: 8px; padding: 8px 12px; color: var(--mute); min-width: 0; }
+.codes li b { font-family: var(--f-mono); font-size: 16px; letter-spacing: 0.08em; }
+.codes li span { font-size: 13px; }
+.codes li.got { border-style: solid; border-color: var(--ok); color: var(--ink); background: rgba(111, 220, 180, 0.07); }
+.codes li.got b { color: var(--ok-ink); }
+
+.tools { display: flex; flex-direction: column; gap: 16px; }
+.check-row { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.check-row input { width: 22px; height: 22px; margin-top: 4px; accent-color: var(--cyan); flex: none; }
+.check-row span { display: flex; flex-direction: column; }
+.check-row small { color: var(--mute); font-size: 13px; line-height: 1.6; }
+.confirm { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: #c0386a; }
+.reset { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- المحطة ---------- */
+.st-head { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; align-items: center; }
+.st-head h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+.st-story { margin-top: 6px; }
+.gate { position: relative; width: 100%; max-width: 220px; justify-self: center; }
+.gate-svg { width: 100%; display: block; overflow: visible; }
+.g-frame { fill: rgba(255, 255, 255, 0.92); stroke: var(--line-strong); stroke-width: 3; }
+.g-door rect { fill: #e9defd; stroke: var(--violet); stroke-width: 2; }
+.g-door path { stroke: rgba(183, 156, 255, 0.5); stroke-width: 2; fill: none; }
+.g-door { transform-box: fill-box; transition: transform 1.3s cubic-bezier(0.6, 0, 0.2, 1); }
+.g-door.l { transform-origin: left center; }
+.g-door.r { transform-origin: right center; }
+.g-lamp { fill: var(--bad); animation: pulse 1.4s ease-in-out infinite; }
+.gate-ico { position: absolute; inset: 0; display: grid; place-items: center; color: var(--warn-ink); pointer-events: none; transition: color 0.6s ease, opacity 0.6s ease; }
+.gate-ico .ico { width: 44px; height: 44px; }
+.gate[data-open="1"] .g-door.l, .gate[data-open="1"] .g-door.r { transform: scaleX(0.1); }
+.gate[data-open="1"] .g-lamp { fill: var(--ok); animation: none; }
+.gate[data-open="1"] .g-frame { stroke: var(--ok); filter: drop-shadow(0 0 10px var(--ok)); }
+.gate[data-open="1"] .gate-ico { color: var(--ok-ink); }
+.gate[data-open="1"]::after { content: ""; position: absolute; inset: 8% 14%; background: radial-gradient(closest-side, rgba(111, 220, 180, 0.5), transparent); z-index: -1; }
+.gate.opening .gate-ico { animation: pop 1.2s ease; }
+@keyframes pop { 30% { transform: scale(1.5); } }
+
+.tasks { display: flex; flex-direction: column; gap: 18px; }
+.task { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.task.solved { border-color: var(--ok); }
+.task-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.task-head h3 { font-size: 1.3rem; }
+.prompt { font-size: 1.1rem; line-height: 2; }
+.plot { border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, 0.9); overflow: hidden; }
+.plot canvas { display: block; width: 100%; aspect-ratio: 16 / 10; max-width: 100%; touch-action: pan-y; }
+.eq { text-align: center; font-size: 1.25rem; min-height: 2em; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 20px; }
+.slider { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.slider label { display: flex; justify-content: space-between; font-weight: 600; }
+.slider output { font-family: var(--f-mono); color: var(--cyan-ink); font-variant-numeric: tabular-nums; }
+.slider input { width: 100%; min-height: 32px; accent-color: var(--cyan); direction: ltr; }
+
+.slider input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; }
+.slider input[type="range"]::-webkit-slider-runnable-track { height: 8px; border-radius: 99px; background: linear-gradient(90deg, #dccfff, #cdeefb); }
+.slider input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin-top: -8px; border-radius: 50%; background: #fff; border: 3px solid #b79cff; box-shadow: 0 2px 8px rgba(160, 130, 225, 0.5); }
+.slider input[type="range"]::-moz-range-track { height: 8px; border-radius: 99px; background: linear-gradient(90deg, #dccfff, #cdeefb); }
+.slider input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid #b79cff; box-shadow: 0 2px 8px rgba(160, 130, 225, 0.5); }
+.slider input[type="range"]:disabled { opacity: 0.65; }
+.entry input, .cert-tools input {
+  width: 100%; max-width: 420px; min-height: 52px; font-size: 20px; padding: 8px 14px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94); border: 1px solid var(--line-strong); color: var(--ink);
+}
+.entry input { font-family: var(--f-mono); text-align: start; }
+.entry input::placeholder, .cert-tools input::placeholder { color: #a39bc4; font-family: var(--f-body); font-size: 16px; }
+.entry input:focus-visible, .cert-tools input:focus-visible { border-color: var(--cyan); box-shadow: var(--glow); outline: none; }
+.entry input:disabled { opacity: 0.7; }
+.opts { display: grid; gap: 10px; }
+.opt { display: flex; gap: 12px; align-items: center; text-align: start; padding: 12px 16px; min-height: 52px; border-radius: 10px; cursor: pointer; background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line-strong); }
+.opt:hover:not(:disabled) { border-color: var(--cyan); }
+.opt .dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--mute); }
+.opt.on { border-color: var(--cyan); background: rgba(95, 195, 232, 0.1); }
+.opt.on .dot { border-color: var(--cyan); background: radial-gradient(var(--cyan) 45%, transparent 50%); }
+.solved .opt.on { border-color: var(--ok); background: rgba(111, 220, 180, 0.1); }
+.solved .opt.on .dot { border-color: var(--ok); background: radial-gradient(var(--ok) 45%, transparent 50%); }
+.opt:disabled { cursor: default; color: inherit; }
+.actions[hidden] { display: none; }
+.feedback:empty { display: none; }
+.fb { border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid; }
+.fb.ok { border-color: var(--ok); background: rgba(111, 220, 180, 0.08); }
+.fb.bad { border-color: var(--bad); background: rgba(255, 143, 177, 0.14); }
+.cheer { font-family: var(--f-display); font-size: 1.3rem; color: var(--ok-ink); }
+.hint { color: var(--ink); }
+.hint-tag { font-family: var(--f-mono); font-size: 12px; color: #4a2e00; background: var(--warn); border-radius: 6px; padding: 1px 8px; margin-inline-end: 6px; }
+.why { line-height: 2; }
+.shake { animation: shake 0.4s ease; }
+@keyframes shake { 20%, 60% { transform: translateX(6px); } 40%, 80% { transform: translateX(-6px); } }
+
+.reward { border-color: var(--ok); box-shadow: 0 0 40px rgba(111, 220, 180, 0.18); display: flex; flex-direction: column; gap: 12px; align-items: flex-start; animation: enter 0.6s ease both; }
+.reward[hidden] { display: none; }
+.rw-code { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.rw-code span { color: var(--mute); }
+.rw-code b { font-family: var(--f-mono); font-size: clamp(1.8rem, 7vw, 2.8rem); color: var(--ok-ink); letter-spacing: 0.1em; text-shadow: 0 0 20px rgba(111, 220, 180, 0.6); }
+.rw-title { font-size: 1.1rem; }
+
+/* ---------- التنسيق الرياضي ---------- */
+.m { font-family: var(--f-math); font-style: italic; font-size: 1.12em; white-space: nowrap; unicode-bidi: isolate; }
+.m sup { font-size: 0.7em; font-style: normal; line-height: 0; }
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin-inline: 0.15em; line-height: 1.2; }
+.fr-n { border-bottom: 1.5px solid currentColor; padding-inline: 0.25em; }
+.fr-d { padding-inline: 0.25em; }
+.rad { display: inline-flex; align-items: flex-end; }
+.rad-in { border-top: 1.5px solid currentColor; padding-inline: 0.2em; }
+
+/* ---------- الانتقال ---------- */
+.transit {
+  position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px;
+  padding: 24px max(24px, env(safe-area-inset-left, 0px)); background: rgba(251, 244, 255, 0.97); opacity: 0; transition: opacity 0.35s ease; cursor: pointer;
+}
+.transit.on { opacity: 1; }
+.transit[hidden] { display: none; }
+.transit h2 { font-size: clamp(2rem, 8vw, 3.4rem); color: var(--cyan-ink); text-shadow: 0 0 24px rgba(95, 195, 232, 0.6); }
+.transit p { max-width: 36ch; font-size: 1.15rem; }
+.transit small { color: var(--mute); margin-top: 14px; }
+.beam { position: absolute; inset-inline: 0; top: 50%; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.7; animation: sweep 1.4s ease-in-out infinite; }
+@keyframes sweep { 0% { transform: translateY(-120px) scaleX(0.2); } 50% { transform: translateY(0) scaleX(1); } 100% { transform: translateY(120px) scaleX(0.2); } }
+
+.toast {
+  position: fixed; z-index: 70; inset-inline: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); margin-inline: auto; width: fit-content; max-width: min(560px, calc(100vw - 32px));
+  background: var(--panel-solid); border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 18px; font-weight: 600; text-align: center;
+  opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.toast.show { opacity: 1; transform: none; }
+.toast.ok { border-color: var(--ok); color: var(--ok-ink); }
+.toast.bad { border-color: var(--bad); color: #c0386a; }
+
+/* ---------- المشهد الأخير ---------- */
+.finale { max-width: 720px; margin: clamp(30px, 10vh, 110px) auto 0; display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; padding: 28px 20px; border-radius: var(--r); background: rgba(255, 255, 255, 0.82); border: 1px solid var(--ok); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.finale h2 { font-size: clamp(2.2rem, 8vw, 3.6rem); text-shadow: 0 0 30px rgba(111, 220, 180, 0.5); }
+.finale-text { font-size: 1.15rem; max-width: 40ch; }
+body.relight #city { animation: relight 3s ease-out 1; }
+@keyframes relight { 0% { filter: brightness(0.4) saturate(0.6); } 50% { filter: brightness(1.9) saturate(1.4); } 100% { filter: none; } }
+body[data-screen="finale"] #city { opacity: 1; }
+
+/* ---------- الشهادة ---------- */
+.cert-h { font-size: 1.8rem; }
+.cert-tools { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.cert-tools input { max-width: none; font-family: var(--f-body); }
+.cert-canvas { width: 100%; height: auto; aspect-ratio: 1600 / 1130; border-radius: var(--r); border: 1px solid var(--line-strong); box-shadow: 0 0 50px rgba(95, 195, 232, 0.18); background: var(--bg-2); }
+
+
+/* ---------- الشاشة الختامية: وراء هذه الرحلة الرياضية (تميمتا المشروع) ---------- */
+.credits { max-width: 880px; margin: clamp(14px, 4vh, 40px) auto 0; position: relative; overflow: hidden; text-align: center; padding: 30px 18px 28px; border-radius: 30px; border: 2px solid rgba(255, 255, 255, 0.95); background: radial-gradient(ellipse 70% 45% at 50% 40%, rgba(214, 196, 255, 0.7), transparent 72%), radial-gradient(ellipse 60% 40% at 10% 92%, rgba(168, 225, 248, 0.65), transparent 70%), radial-gradient(ellipse 60% 40% at 92% 88%, rgba(255, 196, 226, 0.7), transparent 70%), radial-gradient(ellipse 50% 30% at 85% 6%, rgba(255, 233, 180, 0.6), transparent 70%), rgba(255, 255, 255, 0.7); box-shadow: 0 14px 60px rgba(183, 156, 255, 0.38), inset 0 0 0 1px rgba(183, 156, 255, 0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.credits > .cr-in { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cr-fx { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.cr-fx .st { position: absolute; width: 10px; height: 10px; background: #ffd27a; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: crTw 2.6s ease-in-out infinite; }
+.cr-fx .st:nth-child(3n) { background: #ffa6d3; }
+.cr-fx .st:nth-child(3n + 1) { background: #a9dcf5; }
+.cr-fx .st:nth-child(5n) { background: #c9b6ff; }
+.cr-fx .sym { position: absolute; font-family: var(--f-math); font-style: italic; font-weight: 600; opacity: 0.6; animation: crFloat 9s ease-in-out infinite; text-shadow: 0 2px 10px rgba(255, 255, 255, 0.9); }
+.cr-fx .bst { position: absolute; left: 50%; top: 46%; font-size: 18px; animation: crBurst 1.6s ease-out both; }
+@keyframes crTw { 0%, 100% { opacity: 0.25; transform: scale(0.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1.5) rotate(25deg); } }
+@keyframes crFloat { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-22px) rotate(7deg); } }
+@keyframes crBurst { 0% { opacity: 1; transform: translate(0, 0) scale(0.4); } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1.3) rotate(200deg); } }
+.credits h2 { font-size: clamp(1.6rem, 6.2vw, 2.9rem); background: linear-gradient(90deg, #4fb0da, #9a7be8 50%, #ee6fae); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 10px rgba(255, 255, 255, 0.9)); }
+.credits h2 .sp { -webkit-text-fill-color: initial; color: initial; }
+.cr-mascots { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: clamp(4px, 3vw, 36px); width: 100%; margin-top: 6px; }
+.cr-mascots::before { content: ""; position: absolute; left: 50%; bottom: 4%; width: min(92%, 640px); height: 62%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)); z-index: 0; }
+.cr-emblem { position: absolute; left: 50%; top: -2px; transform: translateX(-50%); z-index: 3; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-math); font-style: italic; font-weight: 700; font-size: 20px; color: #fff; background: radial-gradient(circle at 35% 30%, #fff 0, #ffc4e4 28%, #c1a9ff 70%, #9fdcf5 100%); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85), 0 6px 20px rgba(183, 156, 255, 0.6); text-shadow: 0 1px 6px rgba(120, 90, 200, 0.7); animation: crEmb 3.4s ease-in-out infinite; }
+@keyframes crEmb { 0%, 100% { transform: translateX(-50%) translateY(0) rotate(-6deg); } 50% { transform: translateX(-50%) translateY(-10px) rotate(8deg); } }
+.mascot { position: relative; z-index: 1; flex: 1 1 0; max-width: 260px; min-width: 0; display: flex; flex-direction: column; align-items: center; animation: mPop 0.9s cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i) * 0.28s + 0.15s); }
+@keyframes mPop { from { opacity: 0; transform: translateY(40px) scale(0.5); } to { opacity: 1; transform: none; } }
+.mascot svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 10px 14px rgba(120, 90, 190, 0.28)); }
+.m-bob { animation: mBob 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m-sh { transform-origin: 120px 316px; animation: mSh 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m-wave { transform-origin: 146px 214px; animation: mWave 1.1s ease-in-out infinite; }
+.m-head, .m-hairb { transform-origin: 120px 196px; animation: mTilt 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m-eyes { transform-origin: 120px 130px; animation: mBlink 4.6s infinite; animation-delay: var(--d, 0s); }
+.m-card { transform-origin: 120px 232px; animation: mSwing 2.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m-spark { transform-box: fill-box; transform-origin: center; animation: crTw 2.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes mBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes mSh { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.88); } }
+@keyframes mWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(16deg); } }
+@keyframes mTilt { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+@keyframes mBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.08); } }
+@keyframes mSwing { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.m-name { margin-top: -4px; padding: 6px 20px 7px; display: flex; flex-direction: column; align-items: center; line-height: 1.25; border-radius: 20px; background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.78)); border: 2px solid var(--c1); box-shadow: 0 6px 18px rgba(160, 130, 225, 0.3); }
+.m-name b { font-family: var(--f-display); font-size: clamp(1.5rem, 6vw, 2.1rem); color: var(--c2); }
+.m-name span { font-size: clamp(0.76rem, 3vw, 0.96rem); color: var(--mute); padding-top: 2px; border-top: 1.5px dashed var(--c1); margin-top: 2px; }
+.cr-by { padding: 12px 30px; border-radius: 20px; border: 2px dashed rgba(160, 130, 225, 0.6); background: rgba(255, 255, 255, 0.72); font-family: var(--f-display); font-size: clamp(1.05rem, 4vw, 1.35rem); line-height: 1.8; }
+.cr-by .h { color: var(--cyan-ink); font-size: 0.95em; }
+.cr-by .nm { color: var(--ink); }
+.cr-end { max-width: 34ch; font-size: clamp(1rem, 3.8vw, 1.2rem); color: #6a4fb0; text-wrap: balance; }
+
+body[data-screen="credits"] #city { opacity: 0.7; }
+
+.cr-by .sup { margin-top: 8px; padding-top: 8px; border-top: 1.5px dashed rgba(160, 130, 225, 0.6); color: var(--cyan-ink); font-size: 0.95em; }
+.cr-by .yr { color: #6a4fb0; font-size: 0.9em; }
+
+
+/* ---------- بوابة المتطابقات المثلثية ---------- */
+.node.trig.open { --ring: #ee7fb8; }
+.st-head.big { grid-template-columns: 300px minmax(0, 1fr); }
+.st-head.big h1 { background: linear-gradient(90deg, var(--cyan), #9a7be8 50%, #ee7fb8); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 14px rgba(183, 156, 255, 0.5)); }
+.gate.trig { max-width: 300px; }
+.gate.trig[data-open="1"]::after { background: radial-gradient(closest-side, rgba(255, 122, 200, 0.4), transparent); inset: 10%; }
+.tg-ring { fill: none; stroke: url(#tg-g); stroke-width: 1.5; stroke-dasharray: 3 9; opacity: 0.8; transform-origin: 150px 150px; animation: tgSpin 40s linear infinite; }
+.tg-portal { filter: drop-shadow(0 0 14px rgba(183, 156, 255, 0.8)); }
+.tg-core { fill: #fff; font-family: var(--f-math); font-style: italic; font-size: 70px; opacity: 0; transition: opacity 1.2s ease 0.9s; text-shadow: 0 0 18px #fff; }
+.tg-door rect { fill: #e9defd; stroke: #a98bf5; stroke-width: 2; }
+.tg-door path { stroke: rgba(255, 122, 200, 0.55); stroke-width: 2; fill: none; }
+.tg-door { transform-box: fill-box; transition: transform 1.7s cubic-bezier(0.6, 0, 0.2, 1); }
+.tg-door.l { transform-origin: left center; }
+.tg-door.r { transform-origin: right center; }
+.gate.trig[data-arrive="1"] .tg-door { transform: scaleX(0.07); }
+.gate.trig[data-arrive="1"] .tg-core { opacity: 0.95; animation: tgPulse 2.4s ease-in-out 2.2s infinite; }
+.tg-frame { fill: none; stroke: url(#tg-g); stroke-width: 6; stroke-linejoin: round; filter: drop-shadow(0 0 8px #a98bf5) drop-shadow(0 0 16px rgba(95, 195, 232, 0.6)); }
+.tg-base { stroke: url(#tg-g); stroke-width: 5; stroke-linecap: round; fill: none; }
+.tg-flash { fill: none; stroke: #ee7fb8; stroke-width: 4; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.gate.trig[data-arrive="1"] .tg-flash { animation: tgFlash 1.5s ease-out 0.2s 1; }
+.tg-orbit { transform-origin: 150px 150px; animation: tgSpin 28s linear infinite; }
+.tg-orbit.r { animation-direction: reverse; animation-duration: 36s; }
+.tg-sym { fill: #ffe3a3; font-family: var(--f-math); font-style: italic; font-size: 15px; transform-box: fill-box; transform-origin: center; animation: tgSpin 28s linear infinite reverse; filter: drop-shadow(0 0 5px #5fc3e8); }
+.tg-orbit.r .tg-sym { fill: #ffc4e6; animation-duration: 36s; animation-direction: normal; filter: drop-shadow(0 0 5px #ee7fb8); }
+@keyframes tgSpin { to { transform: rotate(360deg); } }
+@keyframes tgPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes tgFlash { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.9); } }
+.tg-core { transform-box: fill-box; transform-origin: center; }
+.rw-bridge { font-size: 1.1rem; line-height: 1.9; }
+.rw-line { font-family: var(--f-display); font-size: clamp(1.3rem, 5vw, 1.8rem); background: linear-gradient(90deg, var(--cyan), #9a7be8 50%, #ee7fb8); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+@media (max-width: 680px) { .st-head.big { grid-template-columns: minmax(0, 1fr); } .gate.trig { max-width: 260px; } }
+
+/* ---------- الشاشات الضيقة ---------- */
+@media (max-width: 680px) {
+  .st-head { grid-template-columns: minmax(0, 1fr); text-align: center; }
+  .st-head .eyebrow { justify-content: center; }
+  .gate { max-width: 170px; }
+  .hud-stats { display: none; }
+  .hud-label { display: none; }
+  .map { height: max(600px, calc(var(--rows, 6) * 118px)); }
+  .node { width: 108px; }
+  .plate { width: 62px; height: 62px; }
+  .plot canvas { aspect-ratio: 4 / 3; }
+  .cert-tools { grid-template-columns: minmax(0, 1fr); }
+  .panel, .task { padding: 14px; }
+  .btn.big { padding-inline: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+}
+
+</style>
+<script>document.documentElement.setAttribute('dir','rtl');document.documentElement.setAttribute('lang','ar');</script>
+<div id="sky" aria-hidden="true"></div>
+<div id="city" aria-hidden="true"></div>
+
+<header id="hud" class="hud" hidden>
+  <div class="hud-in">
+    <button type="button" class="hud-brand" id="btn-home" aria-label="شاشة البداية">شفرة الدوال</button>
+    <div class="hud-power" role="group" aria-label="طاقة المدينة">
+      <span class="hud-label">طاقة المدينة</span>
+      <div class="bar" id="hud-power-bar"><i></i></div>
+      <b id="hud-power-val" dir="ltr">0%</b>
+    </div>
+    <dl class="hud-stats">
+      <div><dt>المحطات</dt><dd id="hud-done" dir="ltr">0 / 0</dd></div>
+      <div><dt>النظام المركزي</dt><dd id="hud-status">مظلم</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="app">
+
+  <!-- شاشة البداية -->
+  <section class="screen" id="screen-intro" aria-labelledby="game-title">
+    <div class="intro">
+      <p class="mono tag" dir="ltr">FUNCTION CODE</p>
+      <h1 id="game-title" data-focus>شفرة الدوال</h1>
+      <p class="tagline">أعيدي تشغيل المدينة… شفرة الرياضيات بين يديك!</p>
+      <ul class="sys-lines" id="intro-lines" aria-label="حالة المدينة"></ul>
+      <button type="button" class="btn primary big" id="btn-start">ابدئي المهمة</button>
+    </div>
+  </section>
+
+  <!-- المقدمة القصصية -->
+  <section class="screen" id="screen-story" aria-labelledby="story-title" hidden>
+    <div class="story panel" id="story-card">
+      <p class="eyebrow warn">تحذير من النظام المركزي</p>
+      <h2 id="story-title" data-focus>رسالة طارئة</h2>
+      <p class="story-text" id="story-text" aria-live="polite"></p>
+      <div class="row">
+        <button type="button" class="btn primary" id="btn-story-next" hidden>إلى خريطة المدينة</button>
+        <button type="button" class="btn ghost" id="btn-skip-story">تخطي</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- خريطة المدينة -->
+  <section class="screen" id="screen-map" aria-label="خريطة المدينة" hidden>
+    <div class="wrap">
+      <div class="map" id="map"></div>
+      <div class="panel zone" id="zone-card"></div>
+
+      <section class="panel progress" aria-labelledby="prog-h">
+        <h2 id="prog-h">لوحة التقدم</h2>
+        <dl class="stats">
+          <div><dt>محطات مكتملة</dt><dd id="prog-done">0</dd></div>
+          <div><dt>محطات متبقية</dt><dd id="prog-left">0</dd></div>
+          <div><dt>إعادة تشغيل المدينة</dt><dd id="prog-pct" dir="ltr">0%</dd></div>
+          <div><dt>النظام المركزي</dt><dd id="prog-status">مظلم</dd></div>
+        </dl>
+        <div class="bar wide" id="prog-bar" aria-hidden="true"><i></i></div>
+        <h3 class="sub">الشفرات المجموعة <span class="mono" id="codes-count" dir="ltr"></span></h3>
+        <ul class="codes" id="prog-codes"></ul>
+        <div class="row between">
+          <button type="button" class="btn primary" id="btn-cert" hidden>عرض شهادة الإتمام</button>
+        </div>
+      </section>
+
+      <section class="panel tools" aria-label="خيارات">
+        <label class="check-row" for="explore">
+          <input type="checkbox" id="explore">
+          <span><b>وضع الاستكشاف</b><small>يفتح كل المحطات لتتنقلي بينها بحرية. الشهادة تتطلب إكمالها جميعًا.</small></span>
+        </label>
+        <div class="reset">
+          <button type="button" class="btn ghost danger" id="reset-ask">إعادة بدء اللعبة</button>
+          <div id="reset-confirm" class="confirm" hidden>
+            <span>سيُحذف كل تقدمك. هل أنتِ متأكدة؟</span>
+            <button type="button" class="btn danger" id="reset-yes">نعم، احذفي التقدم</button>
+            <button type="button" class="btn ghost" id="reset-no">إلغاء</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- المحطة -->
+  <section class="screen" id="screen-station" aria-labelledby="st-title" hidden>
+    <div class="wrap">
+      <button type="button" class="btn ghost back" id="btn-st-back">العودة إلى الخريطة</button>
+      <header class="panel st-head">
+        <div class="gate" id="gate" data-open="0"></div>
+        <div class="st-text">
+          <p class="eyebrow" id="st-eyebrow"></p>
+          <h1 id="st-title" data-focus></h1>
+          <p class="st-story" id="st-story"></p>
+        </div>
+      </header>
+      <div id="tasks" class="tasks"></div>
+      <div id="reward" class="panel reward" hidden></div>
+    </div>
+  </section>
+
+  <!-- المشهد الأخير -->
+  <section class="screen" id="screen-finale" aria-labelledby="finale-title" hidden>
+    <div class="finale">
+      <p class="eyebrow ok">اكتملت كل المحطات</p>
+      <h2 id="finale-title" data-focus>عادت الإضاءة إلى المدينة</h2>
+      <p class="finale-text">اشتعلت النواة المركزية، وانفتحت البوابات، وعادت الأبراج والممرات إلى العمل. أصبحت المدينة آمنة بفضل شفراتك الرياضية.</p>
+      <div class="row center">
+        <button type="button" class="btn primary big" id="btn-to-cert">عرض شهادة الإتمام</button>
+        <button type="button" class="btn ghost" id="btn-finale-credits">وراء هذه الرحلة ✨</button>
+        <button type="button" class="btn ghost" id="btn-finale-map">العودة إلى الخريطة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- الشهادة -->
+  <section class="screen" id="screen-cert" aria-labelledby="cert-title" hidden>
+    <div class="wrap">
+      <h2 id="cert-title" data-focus class="cert-h">شهادة إتمام المشروع</h2>
+      <div class="panel cert-tools">
+        <label for="cert-name">اسم الطالبة</label>
+        <input id="cert-name" type="text" maxlength="60" autocomplete="name" placeholder="اكتبي اسمك ليظهر على الشهادة">
+        <button type="button" class="btn primary" id="btn-save-cert">حفظ الشهادة كصورة</button>
+      </div>
+      <canvas id="cert-canvas" class="cert-canvas" role="img" aria-label="شهادة إتمام مشروع شفرة الدوال"></canvas>
+      <div class="row"><button type="button" class="btn ghost" id="btn-cert-map">العودة إلى الخريطة</button></div>
+    </div>
+  </section>
+
+  <!-- الشاشة الختامية: وراء هذه الرحلة الرياضية -->
+  <section class="screen" id="screen-credits" aria-labelledby="credits-title" hidden>
+    <div class="credits">
+      <div class="cr-fx" id="cr-fx" aria-hidden="true"></div>
+      <div class="cr-in">
+        <p class="eyebrow ok"><span dir="ltr">NEXUS</span> | شفرة الدوال · التميمتان الرسميتان</p>
+        <h2 id="credits-title" data-focus>وراء هذه الرحلة الرياضية <span class="sp">✨</span></h2>
+        <div class="cr-mascots" id="cr-mascots"></div>
+        <div class="cr-by"><div class="h">إعداد وتصميم:</div><div class="nm">سلمى حسن يوسف</div><div class="nm">نورة علي الزهراني</div><div class="sup">بإشراف المعلمة: زهرة الشمراني</div><div class="yr">عام ١٤٤٨هـ</div></div>
+        <p class="cr-end">رحلتنا مع الرياضيات لا تنتهي هنا… فكل معادلة تخفي وراءها اكتشافًا جديدًا!</p>
+        <div class="row center">
+          <button type="button" class="btn primary big" id="btn-credits-home">العودة إلى الصفحة الرئيسية</button>
+          <button type="button" class="btn ghost" id="btn-credits-cert">شهادة الإتمام</button>
+          <button type="button" class="btn ghost" id="btn-credits-fin">مشهد المدينة المضيئة</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="transit" class="transit" hidden role="status">
+  <div class="beam" aria-hidden="true"></div>
+  <p class="eyebrow">الانتقال إلى</p>
+  <h2 id="transit-name"></h2>
+  <p id="transit-text"></p>
+  <small>اضغطي للمتابعة</small>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+/* ==========================================================================
+   mathkit.js — أدوات عرض الأعداد والمعادلات والتحقق من إدخال الطالبة
+   لا يحتوي هذا الملف على أي محتوى تعليمي. المحتوى كله في stations.js
+   ========================================================================== */
+(function () {
+  'use strict';
+  var FC = (window.FC = window.FC || {});
+
+  var MINUS = '−';
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /** تنسيق عدد: يستخدم علامة الطرح الرياضية ويحذف الكسور العشرية الزائدة */
+  function fmt(n, digits) {
+    if (typeof n !== 'number' || !isFinite(n)) return '—';
+    var d = digits == null ? 3 : digits;
+    var p = Math.pow(10, d);
+    var r = Math.round(n * p) / p;
+    if (Object.is(r, -0)) r = 0;
+    return String(r).replace('-', MINUS);
+  }
+
+  /** حد مضاف: "+ 3" أو "− 3" (يعيد نصًا فارغًا عند الصفر) */
+  function term(v) {
+    if (!v) return '';
+    return (v > 0 ? ' + ' : ' ' + MINUS + ' ') + fmt(Math.abs(v));
+  }
+
+  /**
+   * تحويل صيغة نصية بسيطة إلى HTML رياضي:
+   *   x^2  x^(-1)   sqrt(x - 3)   {a|b} للكسور   * للضرب   -> للسهم
+   */
+  function m(expr) {
+    var s = esc(expr);
+    s = s.replace(/\{([^|{}]+)\|([^{}]+)\}/g,
+      '<span class="fr"><span class="fr-n">$1</span><span class="fr-d">$2</span></span>');
+    s = s.replace(/sqrt\(([^()]*)\)/g,
+      '<span class="rad"><span class="rad-sign">√</span><span class="rad-in">$1</span></span>');
+    s = s.replace(/\^\(([^()]*)\)/g, '<sup>$1</sup>');
+    s = s.replace(/\^([−-]?[0-9a-zA-Z]+)/g, '<sup>$1</sup>');
+    s = s.replace(/\*/g, '·');
+    s = s.replace(/-&gt;/g, '→');
+    return '<bdi class="m" dir="ltr">' + s + '</bdi>';
+  }
+
+  /** نص عربي يحتوي مقاطع رياضية بين علامتي $...$ */
+  function rich(str) {
+    if (str == null) return '';
+    return String(str).split('$').map(function (seg, i) {
+      return i % 2 === 1 ? m(seg) : esc(seg);
+    }).join('');
+  }
+
+  var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  var FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+
+  /** قراءة عدد من إدخال الطالبة: أرقام عربية/هندية، فاصلة عشرية، كسور a/b، علامات طرح مختلفة */
+  function parseNum(raw) {
+    if (raw == null) return NaN;
+    var s = String(raw).trim();
+    if (!s) return NaN;
+    s = s.replace(/[٠-٩]/g, function (c) { return AR_DIGITS.indexOf(c); });
+    s = s.replace(/[۰-۹]/g, function (c) { return FA_DIGITS.indexOf(c); });
+    s = s.replace(/[٫٬,]/g, function (c) { return c === '٬' ? '' : '.'; });
+    s = s.replace(/[−–—]/g, '-').replace(/\s+/g, '');
+    s = s.replace(/^[a-zA-Z]+=/, '').replace(/^\+/, '');
+    var frac = /^(-?\d*\.?\d+)\/(-?\d*\.?\d+)$/.exec(s);
+    if (frac) {
+      var den = parseFloat(frac[2]);
+      return den === 0 ? NaN : parseFloat(frac[1]) / den;
+    }
+    if (/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return parseFloat(s);
+    return NaN;
+  }
+
+  function close(a, b, tol) {
+    return Math.abs(a - b) <= (tol == null ? 1e-6 : tol);
+  }
+
+  FC.math = { esc: esc, fmt: fmt, term: term, m: m, rich: rich, parseNum: parseNum, close: close, MINUS: MINUS };
+})();
+
+/* ==========================================================================
+   graph.js — رسم بياني تفاعلي على canvas (محوران، شبكة، منحنيات، نقاط، خطوط)
+   الاستخدام:
+     var g = FC.Graph.create(canvasEl, {xmin, xmax, ymin, ymax});
+     g.draw({ curves:[{fn, color, dash, width, from, to}],
+              points:[{x, y, open, color, label}],
+              hlines:[{y, color, label}], vlines:[{x, color, label}] });
+   ========================================================================== */
+(function () {
+  'use strict';
+  var FC = (window.FC = window.FC || {});
+
+  function niceStep(range, target) {
+    var raw = range / target;
+    var pow = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var f = raw / pow;
+    var nf = f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10;
+    return nf * pow;
+  }
+
+  function css(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  function create(canvas, view) {
+    var ctx = canvas.getContext('2d');
+    var last = null;
+    var W = 0, H = 0, dpr = 1;
+
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return false;
+      dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      W = r.width; H = r.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
+    }
+
+    var pad = { l: 34, r: 12, t: 12, b: 24 };
+    function sx(x) { return pad.l + (x - view.xmin) / (view.xmax - view.xmin) * (W - pad.l - pad.r); }
+    function sy(y) { return H - pad.b - (y - view.ymin) / (view.ymax - view.ymin) * (H - pad.t - pad.b); }
+
+    function drawGrid() {
+      var cGrid = css('--grid', 'rgba(175,150,225,.22)');
+      var cAxis = css('--axis', 'rgba(110,90,170,.65)');
+      var cInk = css('--mute', '#8a82ad');
+      var xs = niceStep(view.xmax - view.xmin, Math.max(4, W / 70));
+      var ys = niceStep(view.ymax - view.ymin, Math.max(4, H / 50));
+      ctx.lineWidth = 1;
+      ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.fillStyle = cInk;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'center';
+      var x0 = Math.ceil(view.xmin / xs) * xs, i, v, p;
+      for (v = x0; v <= view.xmax + 1e-9; v += xs) {
+        p = Math.round(sx(v)) + 0.5;
+        ctx.strokeStyle = cGrid;
+        ctx.beginPath(); ctx.moveTo(p, pad.t); ctx.lineTo(p, H - pad.b); ctx.stroke();
+        if (Math.abs(v) > 1e-9) ctx.fillText(FC.math.fmt(v, 2), p, H - pad.b + 5);
+      }
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      var y0 = Math.ceil(view.ymin / ys) * ys;
+      for (v = y0; v <= view.ymax + 1e-9; v += ys) {
+        p = Math.round(sy(v)) + 0.5;
+        ctx.strokeStyle = cGrid;
+        ctx.beginPath(); ctx.moveTo(pad.l, p); ctx.lineTo(W - pad.r, p); ctx.stroke();
+        if (Math.abs(v) > 1e-9) ctx.fillText(FC.math.fmt(v, 2), pad.l - 6, p);
+      }
+      ctx.strokeStyle = cAxis;
+      ctx.lineWidth = 1.4;
+      if (view.ymin <= 0 && view.ymax >= 0) {
+        p = Math.round(sy(0)) + 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.l, p); ctx.lineTo(W - pad.r, p); ctx.stroke();
+      }
+      if (view.xmin <= 0 && view.xmax >= 0) {
+        p = Math.round(sx(0)) + 0.5;
+        ctx.beginPath(); ctx.moveTo(p, pad.t); ctx.lineTo(p, H - pad.b); ctx.stroke();
+      }
+      ctx.fillStyle = cInk;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      if (view.xmin <= 0 && view.xmax >= 0 && view.ymin <= 0 && view.ymax >= 0) {
+        ctx.fillText('0', sx(0) - 4, sy(0) + 3);
+      }
+    }
+
+    function drawCurve(c) {
+      var from = c.from != null ? Math.max(c.from, view.xmin) : view.xmin;
+      var to = c.to != null ? Math.min(c.to, view.xmax) : view.xmax;
+      if (to <= from) return;
+      var steps = Math.max(80, Math.round((sx(to) - sx(from)) / 1.5));
+      var span = (view.ymax - view.ymin);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pad.l, pad.t, W - pad.l - pad.r, H - pad.t - pad.b);
+      ctx.clip();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = c.width || 2.6;
+      ctx.strokeStyle = c.color || '#5fc3e8';
+      ctx.shadowColor = c.color || '#5fc3e8';
+      ctx.shadowBlur = c.dash ? 0 : 10;
+      ctx.setLineDash(c.dash || []);
+      var pen = false, prevY = null;
+      ctx.beginPath();
+      for (var i = 0; i <= steps; i++) {
+        var x = from + (to - from) * i / steps;
+        var y = c.fn(x);
+        var bad = !isFinite(y) || Math.abs(y) > 1e6 || (prevY != null && Math.abs(y - prevY) > span * 1.2);
+        if (bad) { pen = false; prevY = null; continue; }
+        if (!pen) { ctx.moveTo(sx(x), sy(y)); pen = true; } else { ctx.lineTo(sx(x), sy(y)); }
+        prevY = y;
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLine(l, horizontal) {
+      ctx.save();
+      ctx.strokeStyle = l.color || '#e8962e';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      if (horizontal) {
+        if (l.y < view.ymin || l.y > view.ymax) { ctx.restore(); return; }
+        ctx.moveTo(pad.l, sy(l.y)); ctx.lineTo(W - pad.r, sy(l.y));
+      } else {
+        if (l.x < view.xmin || l.x > view.xmax) { ctx.restore(); return; }
+        ctx.moveTo(sx(l.x), pad.t); ctx.lineTo(sx(l.x), H - pad.b);
+      }
+      ctx.stroke();
+      if (l.label) {
+        ctx.setLineDash([]);
+        ctx.fillStyle = l.color || '#e8962e';
+        ctx.font = '600 12px "IBM Plex Sans Arabic", system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        if (horizontal) ctx.fillText(l.label, pad.l + 6, sy(l.y) - 4);
+        else { ctx.textBaseline = 'top'; ctx.fillText(l.label, sx(l.x) + 5, pad.t + 3); }
+      }
+      ctx.restore();
+    }
+
+    function drawPoint(p) {
+      var x = sx(p.x), y = sy(p.y);
+      if (x < pad.l - 1 || x > W - pad.r + 1 || y < pad.t - 1 || y > H - pad.b + 1) return;
+      var col = p.color || '#7a6fb8';
+      ctx.save();
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(x, y, p.r || 5.5, 0, Math.PI * 2);
+      if (p.open) {
+        ctx.fillStyle = css('--bg', '#fdf5ff');
+        ctx.fill();
+        ctx.lineWidth = 2.2;
+        ctx.strokeStyle = col;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = col;
+        ctx.fill();
+      }
+      ctx.restore();
+      if (p.label) {
+        ctx.save();
+        ctx.fillStyle = col;
+        ctx.font = '600 12px "IBM Plex Mono", ui-monospace, monospace';
+        ctx.textAlign = p.align || 'left';
+        ctx.textBaseline = 'middle';
+        var dx = (p.align === 'right') ? -10 : 10;
+        ctx.fillText(p.label, x + dx, y + (p.dy || -12));
+        ctx.restore();
+      }
+    }
+
+    function draw(spec) {
+      last = spec || last || {};
+      if (!resize()) return;
+      ctx.clearRect(0, 0, W, H);
+      ctx.direction = 'ltr'; /* أرقام المحاور تُكتب من اليسار إلى اليمين حتى في صفحة RTL */
+      drawGrid();
+      (last.curves || []).forEach(drawCurve);
+      (last.hlines || []).forEach(function (l) { drawLine(l, true); });
+      (last.vlines || []).forEach(function (l) { drawLine(l, false); });
+      (last.points || []).forEach(drawPoint);
+    }
+
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function () { if (last) draw(); });
+      ro.observe(canvas);
+    } else {
+      window.addEventListener('resize', function () { if (last) draw(); });
+    }
+
+    return { draw: draw, view: view };
+  }
+
+  FC.Graph = { create: create };
+})();
+
+/* ==========================================================================
+   stations.js — كل المحتوى التعليمي في هذا الملف فقط
+   --------------------------------------------------------------------------
+   لتعديل اللعبة:
+   • غيّري ترتيب المحطات بتغيير ترتيب العناصر في المصفوفة FC.STATIONS.
+   • أضيفي محطة بنسخ أي عنصر وتغيير بياناته (id يجب أن يكون فريدًا).
+   • المحطة الرابعة (id: 'station-4') نموذج قابل للتعديل: غيّري الاسم والوصف
+     والسؤال والخيارات ورقم الخيار الصحيح correct (يبدأ من 0) والتفسير.
+   • الصيغ الرياضية تُكتب بين علامتي $ مثل: $f(x) = 2x + 1$
+     وتدعم: x^2   sqrt(x - 3)   {بسط|مقام}   ->   *
+   أنواع المهام (kind):
+     'graph-fit' : ضبط معاملات بمنزلقات حتى ينطبق المنحنى على الشروط
+     'number'    : إدخال قيمة عددية (تقبل 3 أو ٣ أو 6/2 أو 3.0)
+     'choice'    : اختيار من قائمة
+   الإجابات تُحسب من تعريف الدوال نفسها، لا من نصوص مكتوبة يدويًا.
+   ========================================================================== */
+(function () {
+  'use strict';
+  var FC = (window.FC = window.FC || {});
+  var M = FC.math;
+  var TOL = 1e-6;
+
+  /* ---------- أدوات مساعدة للتحقق ---------- */
+
+  /** تحقق عددي: answer هي القيمة الصحيحة، وwrong قائمة قيم خاطئة شائعة لها ملاحظة */
+  function numberCheck(answer, wrong, tol) {
+    return function (input) {
+      var v = M.parseNum(input);
+      if (isNaN(v)) return { ok: false, invalid: true, note: 'اكتبي عددًا، مثل 3 أو −2 أو 5/2.' };
+      if (M.close(v, answer, tol == null ? 1e-4 : tol)) return { ok: true };
+      var hit = null;
+      (wrong || []).forEach(function (w) {
+        if (!hit && (w.test ? w.test(v) : M.close(v, w.value, 1e-4))) hit = w.note;
+      });
+      return { ok: false, note: hit || 'القيمة لا تحقق الشرط. راجعي الخطوات وجرّبي مرة أخرى.' };
+    };
+  }
+
+  /* ======================================================================
+     المحطة 1 — مختبر الدوال
+     الدالة: f(x) = a(x - h)^2 + k
+     الشرطان: الرأس عند النقطة V، والمنحنى يمر بالنقطة P
+     ====================================================================== */
+  var LAB = { V: { x: 3, y: -2 }, P: { x: 5, y: 2 } };
+  function labF(p) { return function (x) { return p.a * (x - p.h) * (x - p.h) + p.k; }; }
+
+  /* ======================================================================
+     المحطة 2 — بوابة النهايات والاتصال
+     f(x) = x^2 - 1  عندما x < 2   ،   f(x) = k x + c  عندما x >= 2
+     ====================================================================== */
+  var GATE = {
+    split: 2,
+    left: function (x) { return x * x - 1; },
+    c: -3
+  };
+  GATE.limitLeft = GATE.left(GATE.split);                      // نهاية اليسار عند 2
+  GATE.kNeeded = (GATE.limitLeft - GATE.c) / GATE.split;        // k الذي يجعل الدالة متصلة
+  function gateRight(k) { return function (x) { return k * x + GATE.c; }; }
+
+  /* ======================================================================
+     المحطة 3 — مركز استعادة الطاقة
+     P(t) = -2t^2 + 12t + 5 ،  0 <= t <= 6
+     ====================================================================== */
+  var POW = { a: -2, b: 12, c: 5, tmax: 6 };
+  function powP(t) { return POW.a * t * t + POW.b * t + POW.c; }
+  POW.tBest = -POW.b / (2 * POW.a);
+  POW.pBest = powP(POW.tBest);
+
+  /* ======================================================================
+     المحطة 5 — بوابة تركيب الدوال
+     f(x) = 2x + 1 ،  g(x) = x^2 - 3 ،  المطلوب (f o g)(3)
+     ====================================================================== */
+  var CMP = {
+    f: function (x) { return 2 * x + 1; },
+    g: function (x) { return x * x - 3; },
+    x: 3
+  };
+  CMP.answer = CMP.f(CMP.g(CMP.x));
+  CMP.swapped = CMP.g(CMP.f(CMP.x));
+
+  /* ======================================================================
+     المحطة 6 — النواة المركزية
+     أ) دالة عكسية: f(x) = 2x^3 + 1 ، المطلوب f^-1(17)
+     ب) تركيب: p(x) = sqrt(x) ، q(x) = x - 4 ، أصغر عدد صحيح يعمل في (p o q)
+     ====================================================================== */
+  var INV = {
+    f: function (x) { return 2 * x * x * x + 1; },
+    finv: function (y) { return Math.cbrt((y - 1) / 2); },
+    y: 17
+  };
+  INV.answer = INV.finv(INV.y);
+  var DOM = {
+    p: function (x) { return Math.sqrt(x); },
+    q: function (x) { return x - 4; }
+  };
+  DOM.answer = (function () {
+    for (var x = -30; x <= 30; x++) { if (isFinite(DOM.p(DOM.q(x))) && !isNaN(DOM.p(DOM.q(x)))) return x; }
+    return NaN;
+  })();
+
+  /* ====================================================================== */
+
+  FC.STATIONS = [
+    {
+      id: 'station-1',
+      icon: 'wave',
+      name: 'مختبر الدوال',
+      short: 'المختبر',
+      fault: 'منحنيات الإشارة فقدت استقرارها.',
+      travel: 'تعبرين الممر الأزرق نحو مختبر الدوال، وشاشاته تومض بإشارات مشوشة.',
+      story: 'تعطّل نظام التحكم في الإشارات الرياضية، وأصبح شكل المنحنيات غير مستقر. ثبّتي الإشارة عند النقطة المضيئة ' +
+             'لتعود الشاشات إلى العمل.',
+      reward: { code: 'FX-101', title: 'استقرار الإشارة', gate: 'فتحتِ مسار المختبر' },
+      tasks: [{
+        id: 'lab-signal',
+        kind: 'graph-fit',
+        title: 'ثبّتي الإشارة',
+        prompt: 'الإشارة تتبع الدالة $f(x) = a(x - h)^2 + k$. حرّكي المنزلقات بحيث يقع رأس المنحنى عند ' +
+                '$V(3, -2)$ ويمر المنحنى أيضًا بالنقطة $P(5, 2)$.',
+        view: { xmin: -2, xmax: 8, ymin: -5, ymax: 6 },
+        controls: [
+          { id: 'a', label: 'a', min: -3, max: 3, step: 0.5, value: -1 },
+          { id: 'h', label: 'h', min: -2, max: 8, step: 0.5, value: 0 },
+          { id: 'k', label: 'k', min: -5, max: 5, step: 0.5, value: 1 }
+        ],
+        equation: function (p) {
+          return '$f(x) = ' + M.fmt(p.a) + '(x ' + (p.h >= 0 ? M.MINUS + ' ' + M.fmt(p.h) : '+ ' + M.fmt(-p.h)) + ')^2 ' +
+                 (p.k >= 0 ? '+ ' + M.fmt(p.k) : M.MINUS + ' ' + M.fmt(-p.k)) + '$';
+        },
+        draw: function (p) {
+          return {
+            curves: [{ fn: labF(p), color: '#5fc3e8' }],
+            points: [
+              { x: p.h, y: p.k, color: '#e8962e', r: 4, label: 'رأس المنحنى', dy: 16 },
+              { x: LAB.V.x, y: LAB.V.y, open: true, color: '#a98bf5', r: 8, label: 'V' },
+              { x: LAB.P.x, y: LAB.P.y, open: true, color: '#3fc796', r: 8, label: 'P' }
+            ]
+          };
+        },
+        check: function (p) {
+          var vertexOk = M.close(p.h, LAB.V.x, TOL) && M.close(p.k, LAB.V.y, TOL);
+          var passOk = M.close(labF(p)(LAB.P.x), LAB.P.y, TOL);
+          if (vertexOk && passOk && p.a !== 0) return { ok: true };
+          if (p.a === 0) return { ok: false, note: 'عندما يكون a = 0 يصبح الرسم مستقيمًا ولا يوجد رأس. اختاري قيمة أخرى.' };
+          if (vertexOk) return { ok: false, note: 'الرأس في مكانه الصحيح، لكن المنحنى لا يمر بالنقطة P. غيّري انفتاح المنحنى فقط.' };
+          if (passOk) return { ok: false, note: 'المنحنى يمر بالنقطة P، لكن رأسه ليس عند V. أعيدي ضبط h وk.' };
+          return { ok: false, note: 'الرأس ليس عند V والمنحنى لا يمر بالنقطة P.' };
+        },
+        hints: [
+          'ابدئي بالرأس: في الصيغة $a(x - h)^2 + k$ يكون الرأس عند النقطة $(h, k)$.',
+          'بعد وضع الرأس عند V، لاحظي أن الإشارة تمر بـ P فقط إذا كان انفتاح المنحنى مناسبًا. المعامل a هو الذي يتحكم في الانفتاح واتجاهه.',
+          'عند $x = 5$ تبعد P عن محور التماثل مسافة 2 وحدة أفقيًا، وترتفع 4 وحدات عن الرأس. اسألي نفسك: ما قيمة a التي تجعل $a · 2^2 = 4$؟'
+        ],
+        explain: 'الرأس هو النقطة $(h, k) = (3, -2)$. بالتعويض بالنقطة $P(5, 2)$ نحصل على $2 = a(5-3)^2 - 2$، أي $4a = 4$ ' +
+                 'ومنها $a = 1$. تغيير h يحرك المنحنى أفقيًا، وتغيير k يحركه رأسيًا، وتغيير a يغيّر انفتاحه واتجاهه.'
+      }]
+    },
+
+    {
+      id: 'station-2',
+      icon: 'gate',
+      name: 'بوابة النهايات والاتصال',
+      short: 'البوابة',
+      fault: 'البوابة توقفت بسبب انقطاع في منحنى النظام.',
+      travel: 'تقتربين من البوابة العملاقة. حلقاتها مطفأة، وبينها فجوة في مسار الطاقة.',
+      story: 'توقفت بوابة المدينة لأن منحنى نظام التحكم فيها منقطع عند $x = 2$. اختاري قيمة k التي تجعل المنحنى متصلًا ' +
+             'فيمر تيار الطاقة دون انقطاع.',
+      reward: { code: 'LM-202', title: 'بوابة متصلة', gate: 'فُتحت بوابة المدينة' },
+      tasks: [{
+        id: 'gate-continuity',
+        kind: 'number',
+        title: 'أغلقي الفجوة',
+        prompt: 'منحنى النظام معرّف كما يلي: $f(x) = x^2 - 1$ عندما $x < 2$، و$f(x) = kx - 3$ عندما $x ≥ 2$. ' +
+                'ما قيمة k التي تجعل f متصلة عند $x = 2$؟',
+        placeholder: 'اكتبي قيمة k',
+        view: { xmin: -2, xmax: 6, ymin: -5, ymax: 12 },
+        draw: function (input) {
+          var k = M.parseNum(input);
+          var spec = {
+            curves: [{ fn: GATE.left, to: GATE.split, color: '#5fc3e8' }],
+            points: [{ x: GATE.split, y: GATE.limitLeft, open: true, color: '#5fc3e8', r: 6, label: 'نهاية اليسار', dy: -14 }],
+            vlines: [{ x: GATE.split, color: '#8a82ad' }]
+          };
+          if (!isNaN(k)) {
+            spec.curves.push({ fn: gateRight(k), from: GATE.split, color: '#f2709f' });
+            spec.points.push({ x: GATE.split, y: gateRight(k)(GATE.split), color: '#f2709f', r: 5.5, label: 'f(2)', dy: 16 });
+          }
+          return spec;
+        },
+        check: function (input) {
+          var k = M.parseNum(input);
+          if (isNaN(k)) return { ok: false, invalid: true, note: 'اكتبي عددًا، مثل 3 أو −2 أو 5/2.' };
+          var right = gateRight(k)(GATE.split);
+          if (M.close(right, GATE.limitLeft, 1e-4)) return { ok: true };
+          if (right > GATE.limitLeft) return { ok: false, note: 'الفرع الأيمن يبدأ أعلى من نهاية الفرع الأيسر، فتبقى فجوة. جرّبي قيمة أصغر.' };
+          return { ok: false, note: 'الفرع الأيمن يبدأ أسفل نهاية الفرع الأيسر، فتبقى فجوة. جرّبي قيمة أكبر.' };
+        },
+        hints: [
+          'تكون الدالة متصلة عند $x = 2$ إذا تساوت نهاية الفرع الأيسر مع قيمة الدالة عند $x = 2$.',
+          'احسبي نهاية $x^2 - 1$ عندما يقترب x من 2 من اليسار، ثم اكتبي قيمة $f(2)$ بدلالة k.',
+          'ساوي بين الناتجين: $2k - 3$ يجب أن يساوي نهاية اليسار. حلّي المعادلة لإيجاد k.'
+        ],
+        explain: 'نهاية اليسار عند 2 هي $2^2 - 1 = 3$، وقيمة الدالة عند 2 هي $2k - 3$. شرط الاتصال أن يتساويا: ' +
+                 '$2k - 3 = 3$، أي $k = 3$. عندها يلتقي الفرعان في النقطة $(2, 3)$ دون فجوة.'
+      }]
+    },
+
+    {
+      id: 'station-3',
+      icon: 'bolt',
+      name: 'مركز استعادة الطاقة',
+      short: 'الطاقة',
+      fault: 'الطاقة غير مستقرة وتحتاج إلى ضبط عند أعلى قيمة.',
+      travel: 'تنزلين إلى مركز الطاقة. المولّدات تهتز، وعدّاد الجهد يتأرجح.',
+      story: 'تعمل المدينة بطاقة غير مستقرة. المولّد يرفع الطاقة ثم يخفضها، ولا يمكن تشغيل المحول إلا إذا عرفتِ ' +
+             'أعلى قدرة يصل إليها المولّد.',
+      reward: { code: 'MX-303', title: 'طاقة مستقرة', gate: 'عاد التيار إلى المراكز' },
+      tasks: [{
+        id: 'power-max',
+        kind: 'number',
+        title: 'اضبطي المحول',
+        prompt: 'قدرة المولّد بالميغاواط بعد t ثانية: $P(t) = -2t^2 + 12t + 5$ حيث $0 ≤ t ≤ 6$. ' +
+                'ما أكبر قدرة يصل إليها المولّد؟',
+        placeholder: 'أكبر قدرة (ميغاواط)',
+        view: { xmin: -0.5, xmax: 6.5, ymin: -3, ymax: 28 },
+        draw: function (input) {
+          var v = M.parseNum(input);
+          var spec = { curves: [{ fn: powP, from: 0, to: POW.tmax, color: '#3fc796' }], points: [], hlines: [] };
+          if (!isNaN(v)) spec.hlines.push({ y: v, color: '#e8962e', label: 'خط القدرة: ' + M.fmt(v) });
+          return spec;
+        },
+        check: numberCheck(POW.pBest, [
+          { value: POW.tBest, note: 'هذه قيمة الزمن t الذي تحدث عنده أكبر قدرة. المطلوب قيمة القدرة نفسها عند ذلك الزمن.' },
+          { test: function (v) { return v > POW.pBest + 1e-4; }, note: 'هذه القيمة أعلى من أي نقطة على المنحنى. الخط البرتقالي لا يلمس المنحنى.' },
+          { value: POW.c, note: 'هذه القدرة عند بداية التشغيل $t = 0$ وليست أكبر قدرة.' }
+        ]),
+        hints: [
+          'الدالة تربيعية ومعامل $t^2$ فيها سالب، فمنحناها مفتوح للأسفل، وله أعلى نقطة عند الرأس.',
+          'زمن الرأس يساوي $t = {-b|2a}$. احسبيه أولًا.',
+          'عوّضي زمن الرأس في $P(t)$ لتحصلي على القدرة نفسها، وليس على الزمن.'
+        ],
+        explain: 'المنحنى مفتوح للأسفل، فأكبر قيمة عند الرأس. زمن الرأس $t = {-12|2(-2)} = 3$، وعنده ' +
+                 '$P(3) = -2(9) + 36 + 5 = 23$. إذن أكبر قدرة هي 23 ميغاواط عند الثانية 3.'
+      }]
+    },
+
+    /* ----------------------------------------------------------------------
+       المحطة 4 — محطة نموذجية قابلة للتخصيص
+       غيّري كل ما فيها بحسب الدرس الذي تريدينه.
+       ---------------------------------------------------------------------- */
+    {
+      id: 'station-4',
+      icon: 'compass',
+      name: 'برج الإحداثيات',
+      short: 'البرج',
+      fault: 'خريطة الإرسال لا تعرف أي المدخلات مسموحة.',
+      travel: 'تصعدين إلى برج الإحداثيات. الهوائيات تدور بلا اتجاه محدد.',
+      story: 'برج الإرسال يرفض بعض المدخلات ويقبل بعضها. عليك تحديد المدخلات التي تقبلها الدالة ' +
+             '$f(x) = {sqrt(x - 3)|x - 5}$ حتى ينتظم الإرسال.',
+      reward: { code: 'DM-404', title: 'خريطة الإرسال', gate: 'دار البرج نحو الاتجاه الصحيح' },
+      tasks: [{
+        id: 'tower-domain',
+        kind: 'choice',
+        title: 'حدّدي المدخلات المقبولة',
+        prompt: 'ما مجال الدالة $f(x) = {sqrt(x - 3)|x - 5}$؟',
+        options: [
+          '$x ≥ 3$',
+          '$x ≥ 3$ و $x ≠ 5$',
+          '$x > 3$ و $x ≠ 5$',
+          'كل الأعداد الحقيقية ما عدا $5$'
+        ],
+        correct: 1,
+        hints: [
+          'ابحثي عن شرطين: ما الذي يجب أن يتحقق داخل الجذر التربيعي؟ وما القيمة التي تجعل المقام صفرًا؟',
+          'الجذر التربيعي يُعرَّف عندما يكون ما بداخله أكبر من أو يساوي صفرًا. هل الصفر مسموح داخل الجذر؟'
+        ],
+        explain: 'الجذر يتطلب $x - 3 ≥ 0$ أي $x ≥ 3$ (والعدد 3 مسموح لأن $sqrt(0) = 0$). ' +
+                 'والمقام يمنع $x = 5$ لأنه يجعله صفرًا. إذن المجال هو $x ≥ 3$ و $x ≠ 5$.'
+      }]
+    },
+
+    {
+      id: 'station-5',
+      icon: 'link',
+      name: 'بوابة تركيب الدوال',
+      short: 'الربط',
+      fault: 'نظامان منفصلان يحتاجان إلى ربط بالترتيب الصحيح.',
+      travel: 'تصلين إلى بوابة الربط. نظامان متجاوران، وبينهما كابل مقطوع.',
+      story: 'لإرسال الأوامر إلى مركز التحكم يجب ربط نظامين: الأول يعالج ناتج الثاني. ' +
+             'الترتيب مهم، فإذا ربطتِهما بالعكس لن تصل الأوامر.',
+      reward: { code: 'CP-505', title: 'نظامان مرتبطان', gate: 'اتصل النظامان' },
+      tasks: [{
+        id: 'compose-value',
+        kind: 'number',
+        title: 'اربطي النظامين',
+        prompt: 'لدينا $f(x) = 2x + 1$ و $g(x) = x^2 - 3$. الأمر يدخل أولًا إلى g ثم يخرج ناتجه إلى f، ' +
+                'أي المطلوب $(f ∘ g)(3)$. ما قيمته؟',
+        placeholder: 'قيمة التركيب',
+        check: numberCheck(CMP.answer, [
+          { value: CMP.swapped, note: 'هذا ناتج $(g ∘ f)(3)$. الأمر هنا يدخل إلى g أولًا ثم f.' },
+          { value: CMP.g(CMP.x), note: 'هذه قيمة $g(3)$ فقط. بقيت خطوة: أدخلي هذا الناتج إلى f.' }
+        ]),
+        hints: [
+          'في $(f ∘ g)(x)$ تُنفَّذ الدالة الداخلية g أولًا، ثم تُطبَّق f على الناتج.',
+          'احسبي $g(3)$ أولًا.',
+          'خذي ناتج $g(3)$ وعوّضي به في $f(x) = 2x + 1$.'
+        ],
+        explain: '$g(3) = 3^2 - 3 = 6$، ثم $f(6) = 2(6) + 1 = 13$. إذن $(f ∘ g)(3) = 13$. ' +
+                 'لو عكسنا الترتيب لحصلنا على $(g ∘ f)(3) = g(7) = 46$، وهي قيمة مختلفة، لأن التركيب ليس إبداليًا.'
+      }]
+    },
+
+    {
+      id: 'station-6',
+      icon: 'core',
+      name: 'النواة المركزية',
+      short: 'النواة',
+      fault: 'النظام الرئيسي ينتظر مفتاحين رياضيين.',
+      travel: 'تدخلين النواة المركزية. بلورة هائلة معلقة في الظلام، وعليها قفلان.',
+      story: 'وصلتِ إلى الجهاز الرئيسي. لا يعمل إلا بعد فتح قفلين مستقلين: الأول يحتاج دالة عكسية، والثاني تركيبًا ' +
+             'لدالتين. افتحيهما معًا لإعادة تشغيل المدينة.',
+      reward: { code: 'CORE-606', title: 'النظام المركزي', gate: 'اشتعلت النواة المركزية' },
+      tasks: [
+        {
+          id: 'core-inverse',
+          kind: 'number',
+          title: 'القفل الأول: الدالة العكسية',
+          prompt: 'الدالة $f(x) = 2x^3 + 1$ متزايدة على كل الأعداد الحقيقية، فلها دالة عكسية $f^(-1)$. ' +
+                  'ما قيمة $f^(-1)(17)$؟',
+          placeholder: 'قيمة f⁻¹(17)',
+          check: numberCheck(INV.answer, [
+            { value: (INV.y - 1) / 2, note: 'وصلتِ إلى $x^3 = 8$ لكن بقيت خطوة: أوجدي x نفسه بأخذ الجذر التكعيبي.' },
+            { value: INV.f(INV.y), note: 'هذه $f(17)$ وليست $f^(-1)(17)$. المطلوب العدد x الذي يعطي 17 عند تطبيق f.' }
+          ]),
+          hints: [
+            'قيمة $f^(-1)(17)$ هي العدد x الذي يحقق $f(x) = 17$.',
+            'حلّي المعادلة $2x^3 + 1 = 17$.',
+            'بعد عزل $x^3$ خذي الجذر التكعيبي للطرفين.'
+          ],
+          explain: 'نحل $2x^3 + 1 = 17$، فيكون $x^3 = 8$ ومنها $x = 2$. إذن $f^(-1)(17) = 2$. ' +
+                   'للتأكد: $f(2) = 2(8) + 1 = 17$. وُجدت الدالة العكسية لأن f متزايدة دائمًا، فكل قيمة مخرجات لها مدخل واحد فقط.'
+        },
+        {
+          id: 'core-compose',
+          kind: 'number',
+          title: 'القفل الثاني: تركيب الدوال',
+          prompt: 'لدينا $p(x) = sqrt(x)$ و $q(x) = x - 4$. ما أصغر عدد صحيح x يمكن إدخاله في التركيب ' +
+                  '$(p ∘ q)(x)$ ويعطي قيمة حقيقية؟',
+          placeholder: 'أصغر عدد صحيح',
+          check: numberCheck(DOM.answer, [
+            { value: 0, note: 'الصفر هو أصغر مدخل للدالة p، لكن المدخل الفعلي لـ p هو $q(x) = x - 4$ وليس x.' },
+            { test: function (v) { return v < DOM.answer && Math.floor(v) === v; }, note: 'عند هذا المدخل يصبح ما داخل الجذر سالبًا، فلا تعطي الدالة قيمة حقيقية.' }
+          ]),
+          hints: [
+            'في $(p ∘ q)(x)$ يدخل x إلى q أولًا، ثم يصبح الناتج مدخلًا للجذر p.',
+            'الجذر التربيعي يتطلب أن يكون ما بداخله أكبر من أو يساوي صفرًا، وما بداخله هنا هو $x - 4$.',
+            'حلّي المتباينة $x - 4 ≥ 0$ ثم اختاري أصغر عدد صحيح يحققها.'
+          ],
+          explain: '$(p ∘ q)(x) = sqrt(x - 4)$. يجب أن يكون $x - 4 ≥ 0$، أي $x ≥ 4$. ' +
+                   'إذن مجال التركيب هو $x ≥ 4$، وأصغر عدد صحيح فيه هو 4.'
+        }
+      ]
+    },
+
+    /* ----------------------------------------------------------------------
+       المحطة الأخيرة: بوابة المتطابقات المثلثية (تمهيد للدرس الجديد، سؤال واحد فقط)
+       special: 'trig' يفعّل البوابة الكبيرة. arrival عنوان الوصول. bridge رسالة الربط بالدرس.
+       ---------------------------------------------------------------------- */
+    {
+      id: 'station-7',
+      icon: 'trig',
+      special: 'trig',
+      name: 'بوابة المتطابقات المثلثية',
+      short: 'المتطابقات',
+      arrival: 'وصلتِ إلى بوابة المتطابقات المثلثية',
+      fault: 'بوابة أخيرة تنتظر ما تعرفينه عن المثلث القائم.',
+      travel: 'ضوء بنفسجي يتسع أمامك… بوابة ضخمة تدور حولها رموز غريبة.',
+      story: 'عبرتِ المحطات السابقة واستعدتِ خبراتك. أمامك الآن بوابة مختلفة وأخيرة. ' +
+             'لا نحتاج هنا إلى معلومة جديدة، يكفي أن تتذكري ما تعرفينه عن النسب المثلثية في المثلث القائم.',
+      final: true,
+      reward: { code: 'TRG-707', title: 'بوابة المتطابقات المثلثية', gate: 'انفتحت بوابة المتطابقات المثلثية' },
+      bridge: {
+        message: 'ممتاز! لقد استخدمتِ معرفتك السابقة بالنسب المثلثية. ولكن هل تعلمين أن هذه النسب ترتبط بعلاقات رياضية ثابتة تُسمّى المتطابقات المثلثية؟',
+        line: 'من هنا تبدأ رحلتنا لاكتشاف المتطابقات المثلثية',
+        next: 'التالي: صانعتا الرحلة ✨'
+      },
+      tasks: [{
+        id: 'trig-cos',
+        kind: 'choice',
+        title: 'افتحي البوابة',
+        prompt: 'إذا كان جا $θ$ = ${3|5}$ ، وكانت $θ$ زاوية حادة، فما قيمة جتا $θ$؟',
+        options: ['${2|5}$', '${4|5}$', '${3|4}$', '${5|4}$'],
+        correct: 1,
+        hints: [
+          'ارسمي مثلثًا قائم الزاوية. جا $θ$ = المقابل ÷ الوتر، فالمقابل 3 والوتر 5.',
+          'أوجدي الضلع المجاور بنظرية فيثاغورس، ثم تذكري أن جتا $θ$ = المجاور ÷ الوتر.'
+        ],
+        explain: 'المقابل 3 والوتر 5، وبنظرية فيثاغورس المجاور = $sqrt(25 - 9)$ = 4. ' +
+                 'إذن جتا $θ$ = المجاور ÷ الوتر = ${4|5}$.'
+      }]
+    }
+  ];
+
+  /* رسائل التحفيز (تُختار بالتناوب) */
+  FC.CHEERS = [
+    'تمت استعادة النظام بنجاح!',
+    'شفرة صحيحة، اقتربتِ من إنقاذ المدينة!',
+    'أُعيد تشغيل هذه المنطقة بفضل مهاراتك الرياضية!',
+    'حساب دقيق! الطاقة تعود إلى المنطقة.',
+    'أحسنتِ، المهندسة الوحيدة القادرة على إنقاذ المدينة!'
+  ];
+
+  FC.INTRO_STORY = 'تحذير! حدث خلل في النظام الرياضي المركزي، وتعطلت بوابات المدينة وفقدت مناطقها الطاقة. ' +
+    'أنتِ الآن مهندسة النظام الوحيدة القادرة على استعادة التوازن. اجتازي المحطات، وحلّي الشفرات الرياضية، ' +
+    'وأعيدي الحياة إلى المدينة!';
+
+  /* قيم مكشوفة للاختبارات الآلية فقط */
+  FC._facts = { LAB: LAB, GATE: GATE, POW: POW, CMP: CMP, INV: INV, DOM: DOM, labF: labF };
+})();
+
+/* ==========================================================================
+   engine.js — محرك اللعبة: الشاشات، الخريطة، المحطات، الحفظ، الشهادة
+   لا يحتوي أي محتوى رياضي. يقرأ كل شيء من FC.STATIONS
+   ========================================================================== */
+(function () {
+  'use strict';
+  var FC = window.FC;
+  var M = FC.math;
+  var STATIONS = FC.STATIONS;
+
+  var KEY = 'fc.progress.v1';
+  var SALT = 'fc-sigma-2026';
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function esc(s) { return M.esc(s); }
+  function rich(s) { return M.rich(s); }
+
+  /* ------------------------------------------------------------------
+     الأيقونات
+     ------------------------------------------------------------------ */
+  var ICONS = {
+    wave: '<path d="M2 12c2.5-7 4.5-7 7 0s4.5 7 7 0 3-5 6-5"/>',
+    gate: '<path d="M4 21V9a8 8 0 0 1 16 0v12M2 21h20M12 5v16M8 21v-7M16 21v-7"/>',
+    bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    compass: '<path d="M12 2v6M9 8h6l2 13H7zM8.5 14h7M3 5l3 2M21 5l-3 2"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    core: '<path d="m12 2 8 5v10l-8 5-8-5V7zM12 8l3.5 2v4L12 16l-3.5-2v-4z"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    trig: '<path d="M3 20h18L3 5zM9 20a6 6 0 0 0-2.6-5"/>'
+  };
+  function icon(name, cls) {
+    return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
+  }
+
+  /* ------------------------------------------------------------------
+     الحالة والحفظ المحلي (مع توقيع بسيط لمنع التلاعب بالتخزين)
+     ------------------------------------------------------------------ */
+  var mem = null;
+  function storeGet() {
+    try { return localStorage.getItem(KEY); } catch (e) { return mem; }
+  }
+  function storeSet(v) {
+    mem = v;
+    try { localStorage.setItem(KEY, v); } catch (e) { /* التخزين غير متاح: نكمل بدون حفظ */ }
+  }
+  function storeClear() {
+    mem = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+  }
+  function hash(str) {
+    var x = 2166136261;
+    for (var i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; }
+    return x.toString(36);
+  }
+
+  var taskIndex = {};
+  STATIONS.forEach(function (st) { st.tasks.forEach(function (t) { taskIndex[t.id] = st; }); });
+  var totalTasks = Object.keys(taskIndex).length;
+
+  function fresh() { return { name: '', explore: false, intro: false, done: {}, attempts: {}, finishedAt: null }; }
+  function sign(s) {
+    return hash(Object.keys(s.done).sort().join(',') + '|' + (s.finishedAt || '') + '|' + (s.intro ? 1 : 0) + '|' + SALT);
+  }
+  function load() {
+    var raw = storeGet();
+    if (!raw) return fresh();
+    try {
+      var o = JSON.parse(raw);
+      var s = fresh();
+      s.name = typeof o.name === 'string' ? o.name.slice(0, 60) : '';
+      s.explore = !!o.explore;
+      s.intro = !!o.intro;
+      s.finishedAt = typeof o.finishedAt === 'number' ? o.finishedAt : null;
+      Object.keys(o.done || {}).forEach(function (id) { if (taskIndex[id] && o.done[id]) s.done[id] = true; });
+      Object.keys(o.attempts || {}).forEach(function (id) { if (taskIndex[id]) s.attempts[id] = Math.max(0, o.attempts[id] | 0); });
+      if (o.sig !== sign(s)) return fresh();
+      return s;
+    } catch (e) { return fresh(); }
+  }
+  var state = load();
+  function save() {
+    var o = JSON.parse(JSON.stringify(state));
+    o.sig = sign(state);
+    storeSet(JSON.stringify(o));
+  }
+
+  /* ------------------------------------------------------------------
+     منطق التقدم
+     ------------------------------------------------------------------ */
+  function tasksDone(st) { return st.tasks.filter(function (t) { return state.done[t.id]; }).length; }
+  function stationDone(st) { return tasksDone(st) === st.tasks.length; }
+  function doneStations() { return STATIONS.filter(stationDone); }
+  function allDone() { return STATIONS.every(stationDone); }
+  function unlocked(i) { return state.explore || i === 0 || stationDone(STATIONS[i - 1]); }
+  function statusOf(i) {
+    var st = STATIONS[i];
+    if (stationDone(st)) return 'done';
+    return unlocked(i) ? 'open' : 'locked';
+  }
+  function doneCount() { return Object.keys(state.done).length; }
+  function power() { return Math.round(doneCount() / totalTasks * 100); }
+  var STATUS_AR = { done: 'مكتملة', open: 'متاحة', locked: 'مغلقة' };
+  function systemStatus(p) {
+    if (p === 0) return 'مظلم';
+    if (p < 35) return 'طاقة ضعيفة';
+    if (p < 70) return 'تشغيل جزئي';
+    if (p < 100) return 'شبه مستقر';
+    return 'مستقر';
+  }
+
+  /* ------------------------------------------------------------------
+     المدينة (خلفية ثابتة): أبراج ونوافذ تضيء حسب نسبة التقدم
+     ------------------------------------------------------------------ */
+  var windows = [];
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function buildCity() {
+    var host = $('#city');
+    var rand = rng(11);
+    var W = 1200, H = 420;
+    var out = ['<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">'];
+    var layers = [
+      { cls: 'far', n: 16, hmin: 80, hmax: 190, wmin: 50, wmax: 90, win: false },
+      { cls: 'mid', n: 12, hmin: 110, hmax: 280, wmin: 56, wmax: 100, win: true },
+      { cls: 'near', n: 9, hmin: 90, hmax: 230, wmin: 70, wmax: 130, win: true }
+    ];
+    var beacons = [];
+    layers.forEach(function (L) {
+      var x = -20 + rand() * 30;
+      out.push('<g class="bld ' + L.cls + '">');
+      for (var b = 0; b < L.n; b++) {
+        var w = L.wmin + rand() * (L.wmax - L.wmin);
+        var hgt = L.hmin + rand() * (L.hmax - L.hmin);
+        var y = H - hgt;
+        out.push('<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + hgt.toFixed(1) + '"/>');
+        if (L.win) {
+          for (var wy = y + 12; wy < H - 10; wy += 15) {
+            for (var wx = x + 8; wx < x + w - 10; wx += 13) {
+              var idx = windows.length;
+              windows.push({ r: rand(), c: Math.floor(rand() * 3) });
+              out.push('<rect class="win c' + windows[idx].c + '" data-i="' + idx + '" x="' + wx.toFixed(1) + '" y="' + wy.toFixed(1) +
+                '" width="6" height="8" rx="1"/>');
+            }
+          }
+        }
+        if (hgt > 200 && L.win) beacons.push([x + w / 2, y - 6]);
+        x += w * (0.78 + rand() * 0.2);
+      }
+      out.push('</g>');
+    });
+    beacons.forEach(function (p) {
+      out.push('<circle class="beacon" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3"/>');
+    });
+    out.push('</svg>');
+    host.innerHTML = out.join('');
+    var els = $all('.win', host);
+    windows.forEach(function (w, i) {
+      w.el = els[i];
+      w.el.style.transitionDelay = (rand() * 1.4).toFixed(2) + 's';
+    });
+  }
+  function paintCity() {
+    var p = power() / 100;
+    var host = $('#city');
+    host.setAttribute('data-full', p >= 1 ? '1' : '0');
+    windows.forEach(function (w) {
+      var on = w.r < p * 0.92 + (p >= 1 ? 0.08 : 0);
+      w.el.classList.toggle('on', on);
+      w.el.classList.toggle('fl', !on && w.r > 0.9 && p < 1);
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     شاشات
+     ------------------------------------------------------------------ */
+  var current = 'intro';
+  function go(name) {
+    current = name;
+    $all('.screen').forEach(function (s) { s.hidden = s.id !== 'screen-' + name; });
+    document.body.setAttribute('data-screen', name);
+    $('#hud').hidden = !(name === 'map' || name === 'station');
+    window.scrollTo(0, 0);
+    var h1 = $('#screen-' + name + ' [data-focus]');
+    if (h1) { h1.setAttribute('tabindex', '-1'); try { h1.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+  }
+
+  var toastTimer = null;
+  function toast(msg, kind) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (kind || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = 'toast ' + (kind || ''); }, 3600);
+  }
+
+  /* ---------- HUD ---------- */
+  function renderHud() {
+    var p = power();
+    $('#hud-power-bar').style.setProperty('--p', p + '%');
+    $('#hud-power-val').textContent = p + '%';
+    $('#hud-done').textContent = doneStations().length + ' / ' + STATIONS.length;
+    $('#hud-status').textContent = systemStatus(p);
+    $('#hud').setAttribute('data-level', p === 0 ? '0' : p < 35 ? '1' : p < 70 ? '2' : p < 100 ? '3' : '4');
+  }
+
+  /* ---------- شاشة الافتتاح ---------- */
+  function renderIntro() {
+    var has = doneCount() > 0 || state.intro;
+    $('#btn-start').textContent = has ? 'تابعي المهمة' : 'ابدئي المهمة';
+    $('#intro-lines').innerHTML =
+      '<li><span>النظام المركزي</span><b class="bad">متوقف</b></li>' +
+      '<li><span>بوابات المدينة</span><b class="bad">' + doneStations().length + ' / ' + STATIONS.length + '</b></li>' +
+      '<li><span>الطاقة</span><b class="' + (power() ? 'warn' : 'bad') + '">' + power() + '%</b></li>';
+  }
+
+  var typeTimer = null;
+  function showStory() {
+    go('story');
+    var el = $('#story-text');
+    var text = FC.INTRO_STORY;
+    clearInterval(typeTimer);
+    var btn = $('#btn-story-next');
+    btn.hidden = true;
+    var done = function () { clearInterval(typeTimer); el.textContent = text; btn.hidden = false; btn.focus({ preventScroll: true }); };
+    if (reduceMotion) { done(); return; }
+    var i = 0;
+    el.textContent = '';
+    typeTimer = setInterval(function () {
+      i += 2;
+      el.textContent = text.slice(0, i);
+      if (i >= text.length) done();
+    }, 22);
+    $('#story-card').onclick = done;
+  }
+
+  /* ---------- خريطة المدينة ---------- */
+  var selected = 0;
+  function firstOpenIndex() {
+    for (var i = 0; i < STATIONS.length; i++) { if (statusOf(i) === 'open') return i; }
+    return STATIONS.length - 1;
+  }
+  function nodePos(i, n) {
+    if (n === 1) return { x: 50, y: 50 };
+    return { x: i % 2 === 0 ? 27 : 73, y: 9 + 82 * i / (n - 1) };
+  }
+  function renderMap() {
+    var n = STATIONS.length;
+    var map = $('#map');
+    map.style.setProperty('--rows', n);
+    var html = ['<svg class="paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'];
+    for (var i = 0; i < n - 1; i++) {
+      var a = nodePos(i, n), b = nodePos(i + 1, n), my = (a.y + b.y) / 2;
+      html.push('<path class="seg ' + (stationDone(STATIONS[i]) ? 'on' : '') + '" d="M' + a.x + ' ' + a.y + ' C ' + a.x + ' ' + my + ', ' +
+        b.x + ' ' + my + ', ' + b.x + ' ' + b.y + '" vector-effect="non-scaling-stroke"/>');
+    }
+    html.push('</svg>');
+    STATIONS.forEach(function (st, k) {
+      var pos = nodePos(k, n), s = statusOf(k);
+      var frac = tasksDone(st) / st.tasks.length;
+      html.push('<button type="button" class="node ' + s + (st.special ? ' ' + st.special : '') + (k === selected ? ' sel' : '') + '" data-i="' + k +
+        '" style="left:' + pos.x + '%;top:' + pos.y + '%;--f:' + (frac * 360) + 'deg" aria-label="' + esc(st.name) + '، ' + STATUS_AR[s] + '">' +
+        '<span class="plate">' + icon(s === 'locked' ? 'lock' : st.icon) + '<span class="num">' + (k + 1) + '</span></span>' +
+        '<span class="nlabel">' + esc(st.short || st.name) + '</span>' +
+        '<span class="nstate">' + STATUS_AR[s] + '</span></button>');
+    });
+    map.innerHTML = html.join('');
+    $all('.node', map).forEach(function (b) {
+      b.addEventListener('click', function () { selected = +b.getAttribute('data-i'); renderMap(); renderZoneCard(); });
+    });
+    renderZoneCard();
+    renderProgress();
+  }
+  function renderZoneCard() {
+    var k = selected, st = STATIONS[k], s = statusOf(k);
+    var prev = k > 0 ? STATIONS[k - 1] : null;
+    var frac = tasksDone(st) + ' / ' + st.tasks.length;
+    var box = $('#zone-card');
+    box.setAttribute('data-state', s);
+    box.innerHTML =
+      '<div class="zc-head"><span class="zc-icon">' + icon(st.icon) + '</span><div><p class="eyebrow">المحطة ' + (k + 1) + ' من ' + STATIONS.length +
+      ' <span class="pill ' + s + '">' + STATUS_AR[s] + '</span></p><h2 data-focus>' + esc(st.name) + '</h2></div></div>' +
+      '<p class="zc-fault">' + rich(st.fault) + '</p>' +
+      '<dl class="zc-meta"><div><dt>المهام</dt><dd>' + frac + '</dd></div><div><dt>المكافأة</dt><dd>' + esc(st.reward.title) + '</dd></div></dl>' +
+      (s === 'locked'
+        ? '<p class="zc-lock">' + icon('lock', 'inline') + ' أكملي «' + esc(prev ? prev.name : '') + '» أولًا لفتح هذه المحطة.</p>'
+        : '<button type="button" class="btn primary" id="btn-enter">' + (s === 'done' ? 'مراجعة المحطة' : 'ادخلي المحطة') + '</button>');
+    var enter = $('#btn-enter');
+    if (enter) enter.addEventListener('click', function () { enterStation(k); });
+  }
+  function renderProgress() {
+    var p = power();
+    var codes = doneStations().map(function (st) { return st.reward.code; });
+    $('#prog-done').textContent = doneStations().length;
+    $('#prog-left').textContent = STATIONS.length - doneStations().length;
+    $('#prog-pct').textContent = p + '%';
+    $('#prog-status').textContent = systemStatus(p);
+    $('#prog-bar').style.setProperty('--p', p + '%');
+    $('#prog-codes').innerHTML = STATIONS.map(function (st) {
+      var got = stationDone(st);
+      return '<li class="' + (got ? 'got' : '') + '"><b>' + (got ? esc(st.reward.code) : '•••••') + '</b><span>' +
+        (got ? esc(st.reward.title) : 'شفرة لم تُجمع بعد') + '</span></li>';
+    }).join('');
+    $('#explore').checked = !!state.explore;
+    var fin = $('#btn-cert');
+    fin.hidden = !allDone();
+    $('#codes-count').textContent = codes.length + ' من ' + STATIONS.length;
+  }
+
+  /* ---------- الانتقال بين المناطق ---------- */
+  var travelTimer = null;
+  function travel(st, cb) {
+    var ov = $('#transit');
+    $('#transit-text').innerHTML = rich(st.travel || ('تتجهين إلى ' + st.name));
+    $('#transit-name').textContent = st.name;
+    ov.hidden = false;
+    requestAnimationFrame(function () { ov.classList.add('on'); });
+    var finish = function () {
+      clearTimeout(travelTimer);
+      ov.onclick = null;
+      ov.classList.remove('on');
+      ov.hidden = true;
+      cb();
+    };
+    ov.onclick = finish;
+    travelTimer = setTimeout(finish, reduceMotion ? 700 : 2000);
+  }
+
+  /* ---------- المحطة ---------- */
+  var currentStation = 0;
+  var graphs = {};
+  function enterStation(k) {
+    if (!unlocked(k)) { toast('هذه المحطة مغلقة. أكملي المحطة السابقة أولًا.', 'bad'); return; }
+    currentStation = k;
+    travel(STATIONS[k], function () { renderStation(); go('station'); });
+  }
+
+  function gateSvg(icoName) {
+    return '<svg class="gate-svg" viewBox="0 0 240 150" aria-hidden="true">' +
+      '<rect class="g-frame" x="14" y="8" width="212" height="136" rx="10"/>' +
+      '<g class="g-door l"><rect x="20" y="14" width="100" height="124" rx="4"/><path d="M40 40h60M40 62h60M40 84h60M40 106h60"/></g>' +
+      '<g class="g-door r"><rect x="120" y="14" width="100" height="124" rx="4"/><path d="M140 40h60M140 62h60M140 84h60M140 106h60"/></g>' +
+      '<circle class="g-lamp a" cx="38" cy="8" r="4"/><circle class="g-lamp b" cx="202" cy="8" r="4"/>' +
+      '</svg><span class="gate-ico">' + icon(icoName) + '</span>';
+  }
+
+  /* بوابة المتطابقات: بوابة مضيئة كبيرة، رموز تدور حولها، وأبواب تنفتح عند الوصول */
+  function trigGateSvg() {
+    var orbit = function (list, r, cls) {
+      return '<g class="tg-orbit ' + cls + '">' + list.map(function (t, i) {
+        var a = i / list.length * Math.PI * 2 - Math.PI / 2;
+        return '<g transform="translate(' + (150 + r * Math.cos(a)).toFixed(1) + ' ' + (150 + r * Math.sin(a)).toFixed(1) + ')"><text class="tg-sym" text-anchor="middle" dominant-baseline="central">' + t + '</text></g>';
+      }).join('') + '</g>';
+    };
+    var arch = 'M58 272V160A92 92 0 0 1 242 160V272Z';
+    return '<svg class="gate-svg tg-svg" viewBox="0 0 300 300" aria-hidden="true"><defs>' +
+      '<linearGradient id="tg-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5fc3e8"/><stop offset=".5" stop-color="#a98bf5"/><stop offset="1" stop-color="#ee7fb8"/></linearGradient>' +
+      '<radialGradient id="tg-p" cx="50%" cy="55%" r="60%"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#ee7fb8"/><stop offset=".6" stop-color="#b79cff"/><stop offset="1" stop-color="#8e7ae0"/></radialGradient>' +
+      '<clipPath id="tg-clip"><path d="' + arch + '"/></clipPath></defs>' +
+      '<circle class="tg-ring" cx="150" cy="150" r="146"/>' +
+      '<path class="tg-portal" d="' + arch + '" fill="url(#tg-p)"/>' +
+      '<text class="tg-core" x="150" y="200" text-anchor="middle">θ</text>' +
+      '<g clip-path="url(#tg-clip)"><g class="tg-door l"><rect x="58" y="60" width="92" height="214"/><path d="M76 100h56M76 140h56M76 180h56M76 220h56"/></g>' +
+      '<g class="tg-door r"><rect x="150" y="60" width="92" height="214"/><path d="M168 100h56M168 140h56M168 180h56M168 220h56"/></g></g>' +
+      '<path class="tg-frame" d="M52 278V160A98 98 0 0 1 248 160V278Z"/><path class="tg-base" d="M32 284H268"/>' +
+      '<circle class="tg-flash" cx="150" cy="170" r="80"/>' +
+      orbit(['sin θ', 'π', 'cos θ', 'θ', 'tan θ', '180°'], 138, 'o1') +
+      orbit(['a/c', 'b/c', 'a/b', 'c²', '30°', '90°'], 114, 'o2 r') + '</svg>';
+  }
+
+  function renderStation() {
+    var st = STATIONS[currentStation];
+    var open = stationDone(st);
+    $('#st-eyebrow').textContent = 'المحطة ' + (currentStation + 1) + ' من ' + STATIONS.length;
+    $('#st-title').textContent = st.arrival || st.name;
+    var hd = $('.st-head'); if (hd) hd.classList.toggle('big', !!st.special);
+    $('#st-story').innerHTML = rich(st.story);
+    var gate = $('#gate');
+    gate.className = 'gate' + (st.special ? ' ' + st.special : '');
+    gate.innerHTML = st.special === 'trig' ? trigGateSvg() : gateSvg(st.icon);
+    gate.setAttribute('data-open', open ? '1' : '0');
+    gate.removeAttribute('data-arrive');
+    if (st.special === 'trig') {
+      var arrive = function () { gate.setAttribute('data-arrive', '1'); };
+      if (open || reduceMotion) arrive(); else setTimeout(arrive, 900);
+    }
+    var body = $('#tasks');
+    body.innerHTML = '';
+    graphs = {};
+    st.tasks.forEach(function (t, i) { body.appendChild(buildTask(st, t, i)); });
+    renderReward();
+    renderHud();
+  }
+
+  function readParams(panel, task) {
+    var p = {};
+    task.controls.forEach(function (c) { p[c.id] = parseFloat($('#' + panel.id + '-' + c.id).value); });
+    return p;
+  }
+
+  function buildTask(st, task, idx) {
+    var done = !!state.done[task.id];
+    var panel = document.createElement('article');
+    panel.className = 'task';
+    panel.id = 'task-' + task.id;
+    panel.setAttribute('data-kind', task.kind);
+    var multi = st.tasks.length > 1;
+    var h = ['<header class="task-head"><h3>' + esc(task.title) + '</h3>' +
+      (multi ? '<span class="pill ' + (done ? 'done' : 'open') + '">' + (done ? 'مكتملة' : 'قيد الحل') + '</span>' : '') + '</header>'];
+    h.push('<p class="prompt">' + rich(task.prompt) + '</p>');
+    if (task.kind === 'graph-fit') h.push('<p class="eq" id="' + panel.id + '-eq" aria-live="polite"></p>');
+    if (task.view) h.push('<div class="plot"><canvas id="' + panel.id + '-cv" role="img" aria-label="رسم بياني تفاعلي للدالة"></canvas></div>');
+    if (task.kind === 'graph-fit') {
+      h.push('<div class="sliders">');
+      task.controls.forEach(function (c) {
+        var id = panel.id + '-' + c.id;
+        h.push('<div class="slider"><label for="' + id + '"><span class="m">' + esc(c.label) + '</span> <output id="' + id + '-o" dir="ltr">' + M.fmt(c.value) + '</output></label>' +
+          '<input type="range" id="' + id + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" value="' + c.value + '"' + (done ? ' disabled' : '') + '></div>');
+      });
+      h.push('</div>');
+    }
+    if (task.kind === 'number') {
+      h.push('<div class="entry"><label for="' + panel.id + '-in" class="sr">إجابتك</label>' +
+        '<input id="' + panel.id + '-in" type="text" inputmode="decimal" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' +
+        esc(task.placeholder || 'اكتبي الإجابة') + '"' + (done ? ' disabled' : '') + '></div>');
+    }
+    if (task.kind === 'choice') {
+      h.push('<div class="opts" role="radiogroup" aria-label="الخيارات">');
+      task.options.forEach(function (o, i) {
+        h.push('<button type="button" class="opt" role="radio" aria-checked="false" data-i="' + i + '"' + (done ? ' disabled' : '') + '><span class="dot"></span><span>' + rich(o) + '</span></button>');
+      });
+      h.push('</div>');
+    }
+    h.push('<div class="actions"' + (done ? ' hidden' : '') + '><button type="button" class="btn primary check">تحقق من الشفرة</button></div>');
+    h.push('<div class="feedback" aria-live="polite"></div>');
+    panel.innerHTML = h.join('');
+    $('#tasks').appendChild(panel); /* يجب أن تكون اللوحة داخل الصفحة قبل البحث عن عناصرها بالمعرّف */
+
+    var fb = $('.feedback', panel);
+    var selectedOpt = null;
+
+    /* الرسم */
+    var graph = null;
+    function redraw() {
+      var spec;
+      if (task.kind === 'graph-fit') {
+        var p = readParams(panel, task);
+        $('#' + panel.id + '-eq').innerHTML = rich(task.equation(p));
+        spec = task.draw(p);
+      } else if (task.view && task.draw) {
+        spec = task.draw($('#' + panel.id + '-in') ? $('#' + panel.id + '-in').value : '');
+      }
+      if (graph && spec) graph.draw(spec);
+    }
+    if (task.view) {
+      graph = FC.Graph.create($('#' + panel.id + '-cv'), task.view);
+      graphs[task.id] = graph;
+    }
+    if (task.kind === 'graph-fit') {
+      task.controls.forEach(function (c) {
+        var inp = $('#' + panel.id + '-' + c.id);
+        inp.addEventListener('input', function () {
+          $('#' + panel.id + '-' + c.id + '-o').textContent = M.fmt(parseFloat(inp.value));
+          redraw();
+        });
+      });
+    }
+    var numIn = $('#' + panel.id + '-in');
+    if (numIn) {
+      numIn.addEventListener('input', redraw);
+      numIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+    }
+    $all('.opt', panel).forEach(function (b) {
+      b.addEventListener('click', function () {
+        selectedOpt = +b.getAttribute('data-i');
+        $all('.opt', panel).forEach(function (o) {
+          var on = o === b;
+          o.classList.toggle('on', on);
+          o.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+      });
+    });
+    $('.check', panel).addEventListener('click', run);
+    redraw();
+
+    if (done) showSolved(true);
+
+    function lockInputs() {
+      $all('input, .opt', panel).forEach(function (e) { e.disabled = true; });
+      $('.actions', panel).hidden = true;
+      var head = $('.pill', panel);
+      if (head) { head.className = 'pill done'; head.textContent = 'مكتملة'; }
+    }
+    function showSolved(restore) {
+      lockInputs();
+      if (task.kind === 'choice') {
+        $all('.opt', panel).forEach(function (o) {
+          var on = +o.getAttribute('data-i') === task.correct;
+          o.classList.toggle('on', on);
+          o.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+      }
+      fb.innerHTML = '<div class="fb ok">' + (restore ? '' : '<p class="cheer">' + esc(FC.CHEERS[(doneCount() - 1) % FC.CHEERS.length]) + '</p>') +
+        '<p class="why"><strong>لماذا هذه الإجابة صحيحة؟</strong> ' + rich(task.explain) + '</p></div>';
+    }
+
+    function run() {
+      if (state.done[task.id]) return;
+      var res;
+      if (task.kind === 'choice') {
+        if (selectedOpt == null) { fb.innerHTML = '<div class="fb bad"><p>اختاري إجابة أولًا.</p></div>'; return; }
+        res = { ok: selectedOpt === task.correct };
+      } else if (task.kind === 'graph-fit') {
+        res = task.check(readParams(panel, task));
+      } else {
+        res = task.check(numIn.value);
+      }
+      if (res.invalid) { fb.innerHTML = '<div class="fb bad"><p>' + rich(res.note) + '</p></div>'; return; }
+      if (res.ok) {
+        state.done[task.id] = true;
+        if (allDone() && !state.finishedAt) state.finishedAt = Date.now();
+        save();
+        panel.classList.add('solved');
+        showSolved(false);
+        renderHud(); paintCity();
+        if (stationDone(st)) { onStationComplete(st); }
+        else { toast(FC.CHEERS[(doneCount() - 1) % FC.CHEERS.length], 'ok'); }
+        return;
+      }
+      state.attempts[task.id] = (state.attempts[task.id] || 0) + 1;
+      save();
+      var n = state.attempts[task.id];
+      var hints = task.hints || [];
+      var hint = hints.length ? hints[Math.min(n, hints.length) - 1] : '';
+      fb.innerHTML = '<div class="fb bad"><p><strong>ليست الشفرة الصحيحة بعد.</strong> ' + (res.note ? rich(res.note) : '') + '</p>' +
+        (hint ? '<p class="hint"><span class="hint-tag">تلميح ' + Math.min(n, hints.length) + ' من ' + hints.length + '</span> ' + rich(hint) + '</p>' : '') +
+        '</div>';
+      panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+    }
+    return panel;
+  }
+
+  function renderReward() {
+    var st = STATIONS[currentStation];
+    var box = $('#reward');
+    if (!stationDone(st)) { box.hidden = true; return; }
+    var fin = allDone();
+    box.hidden = false;
+    if (st.bridge) {
+      box.innerHTML =
+        '<p class="eyebrow">' + esc(st.reward.gate) + '</p>' +
+        '<div class="rw-code"><span>الشفرة</span><b>' + esc(st.reward.code) + '</b></div>' +
+        '<p class="rw-bridge">' + esc(st.bridge.message) + '</p>' +
+        '<p class="rw-line">' + esc(st.bridge.line) + '</p>' +
+        '<div class="rw-actions">' + (fin
+          ? '<button type="button" class="btn primary" id="btn-credits-go">' + esc(st.bridge.next) + '</button>'
+          : '<button type="button" class="btn primary" id="btn-back">العودة إلى خريطة المدينة</button>') + '</div>';
+      var cg = $('#btn-credits-go'), bk = $('#btn-back');
+      if (cg) cg.addEventListener('click', showCredits);
+      if (bk) bk.addEventListener('click', backToMap);
+      return;
+    }
+    box.innerHTML =
+      '<p class="eyebrow">' + esc(st.reward.gate) + '</p>' +
+      '<div class="rw-code"><span>الشفرة</span><b>' + esc(st.reward.code) + '</b></div>' +
+      '<p class="rw-title">' + esc(st.reward.title) + '. ' + FC.CHEERS[2] + '</p>' +
+      '<div class="rw-actions">' +
+      (fin ? '<button type="button" class="btn primary" id="btn-finale">شاهدي المدينة تعود إلى الحياة</button>'
+           : '<button type="button" class="btn primary" id="btn-back">العودة إلى خريطة المدينة</button>') +
+      '</div>';
+    var fb = $('#btn-finale'), bb = $('#btn-back');
+    if (fb) fb.addEventListener('click', showFinale);
+    if (bb) bb.addEventListener('click', backToMap);
+  }
+
+  function onStationComplete(st) {
+    var gate = $('#gate');
+    gate.setAttribute('data-open', '1');
+    gate.classList.add('opening');
+    setTimeout(function () { gate.classList.remove('opening'); }, 1600);
+    renderReward();
+    toast('أُعيد تشغيل هذه المنطقة: ' + st.reward.gate, 'ok');
+    var r = $('#reward');
+    if (r && r.scrollIntoView) setTimeout(function () { r.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); }, 450);
+  }
+
+  function backToMap() {
+    selected = Math.min(allDone() ? currentStation : firstOpenIndex(), STATIONS.length - 1);
+    renderMap(); renderHud(); go('map');
+  }
+
+  /* ---------- المشهد الأخير ---------- */
+  function showFinale() {
+    if (!allDone()) { toast('أكملي كل المحطات أولًا.', 'bad'); return; }
+    go('finale');
+    document.body.classList.remove('relight');
+    void document.body.offsetWidth;
+    document.body.classList.add('relight');
+    paintCity();
+  }
+
+
+  /* ---------- الشاشة الختامية: التميمتان ---------- */
+  /* كل شخصية بيانات بسيطة: لتغيير شكل أو لون أو اسم تعدّلين هذه القائمة فقط */
+  function curl(cx, cy, r, id, dark) {
+    var s = r / 20;
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#' + id + '-hr)"/>' +
+      '<path d="M' + (cx - 2 * s) + ' ' + cy + 'a' + (2 * s) + ' ' + (2 * s) + ' 0 1 1 ' + (4 * s) + ' 0a' + (4.5 * s) + ' ' + (4.5 * s) + ' 0 1 1 ' + (-9 * s) + ' 0" stroke="' + dark + '" stroke-opacity=".38" stroke-width="2.2" stroke-linecap="round" fill="none"/>' +
+      '<path d="M' + (cx - r * 0.62) + ' ' + (cy - r * 0.12) + 'A' + (r * 0.66) + ' ' + (r * 0.66) + ' 0 0 1 ' + (cx - r * 0.1) + ' ' + (cy - r * 0.66) + '" stroke="#fff" stroke-opacity=".42" stroke-width="3" stroke-linecap="round" fill="none"/>';
+  }
+  function curls(list, id, dark) { return list.map(function (c) { return curl(c[0], c[1], c[2], id, dark); }).join(''); }
+
+  var MASCOTS = [
+    /* سلمى: شعر طويل ناعم */
+    { id: 's', first: 'سلمى', full: 'سلمى حسن يوسف', c1: '#b7a0f5', c2: '#7a55d6', d: '0s', flip: false,
+      hairL: '#a07fc4', hairD: '#5a3e86', iris: ['#cdbdff', '#5b3fb0'], o1: '#e2d6ff', o2: '#a98bf5', pants: '#bfe3fa', shoe: '#ffc2e0',
+      card: ['#ffffff', '#e4f6ff'], lace: '#7fcdee', sk2: ['#c2f3e4', '#a9d9f8'],
+      back: '<path d="M26 118C10 186 20 268 54 288Q82 296 92 274L94 196L146 196L148 274Q158 296 186 288C220 268 230 186 214 118C214 50 168 22 120 22C72 22 26 50 26 118Z" fill="url(#s-hr)"/>' +
+            '<path d="M42 112C32 172 38 240 60 274" stroke="#fff" stroke-opacity=".3" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M198 112C208 172 202 240 180 274" stroke="#fff" stroke-opacity=".3" stroke-width="7" stroke-linecap="round" fill="none"/>' +
+            '<path d="M56 262Q60 276 70 282M184 262Q180 276 170 282" stroke="#5a3e86" stroke-opacity=".25" stroke-width="3" stroke-linecap="round" fill="none"/>',
+      fringe: '<path d="M36 126C28 58 84 30 122 32C162 30 214 58 204 126C198 102 184 86 158 78C142 94 112 98 84 90C60 96 44 108 36 126Z" fill="url(#s-hr)"/>' +
+              '<path d="M70 56Q98 40 130 44" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round" fill="none"/>' +
+              '<path d="M92 90C120 80 150 74 172 82" stroke="#5a3e86" stroke-opacity=".2" stroke-width="3" stroke-linecap="round" fill="none"/>' +
+              '<rect x="48" y="76" width="30" height="9" rx="4.5" transform="rotate(-28 63 80)" fill="#9bdcf5" stroke="#fff" stroke-width="1.6"/>' +
+              '<g class="m-spark" style="--d:.4s"><path d="M168 46L171.5 55L181 56L173.5 62L176 71L168 66L160 71L162.5 62L155 56L164.5 55Z" fill="#ffe08a" stroke="#fff" stroke-width="1.4"/></g>',
+      brows: '<path d="M72 106Q86 96 100 105M140 105Q154 96 168 106" stroke="#5a3e86" stroke-width="4" stroke-linecap="round" fill="none"/>',
+      eyes: 'both', glasses: '',
+      mouth: '<path d="M106 150Q120 155 134 150Q132 173 120 173Q108 173 106 150Z" fill="#c4456f"/><ellipse cx="120" cy="167" rx="8" ry="4.5" fill="#ff9db8"/><path d="M108 151Q120 157 132 151" stroke="#fff" stroke-width="3" fill="none" opacity=".9"/>',
+      extra: '<path d="M110 208Q106 218 108 227M130 208Q134 218 132 227" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="108" cy="228" r="3.5" fill="#fff"/><circle cx="132" cy="228" r="3.5" fill="#fff"/>',
+      lower: '' },
+    /* نورة: شعر قصير مجعد (كيرلي) */
+    { id: 'n', first: 'نورة', full: 'نورة علي الزهراني', c1: '#ff9fcf', c2: '#d4478f', d: '-1.4s', flip: true,
+      hairL: '#8c6379', hairD: '#3a2433', iris: ['#b4f3e6', '#2f8f9a'], o1: '#ffd6ea', o2: '#f59ac8', pants: '#d9c9ff', shoe: '#cdbcff',
+      card: ['#ffffff', '#ffe6f3'], lace: '#b79cff', sk2: ['#c2f3e4', '#a9d9f8'],
+      back: '<ellipse cx="120" cy="112" rx="88" ry="82" fill="url(#n-hr)"/>' +
+            curls([[34, 152, 20], [24, 126, 23], [26, 98, 24], [38, 70, 25], [60, 48, 25], [88, 34, 25], [120, 28, 26], [152, 34, 25], [180, 48, 25], [202, 70, 25], [214, 98, 24], [216, 126, 23], [206, 152, 20]], 'n', '#3a2433'),
+      fringe: '<path d="M34 128C26 60 84 34 120 34C160 34 214 60 206 128C198 106 182 94 160 90C140 102 100 102 80 90C58 94 42 106 34 128Z" fill="url(#n-hr)"/>' +
+              curls([[40, 112, 15], [46, 132, 13], [200, 112, 15], [194, 132, 13], [54, 94, 16], [186, 94, 16], [70, 80, 17], [92, 70, 18], [116, 66, 18], [140, 70, 18], [162, 78, 17], [178, 88, 14], [64, 64, 17], [96, 52, 18], [128, 50, 18], [160, 56, 17], [186, 70, 16], [52, 76, 15]], 'n', '#3a2433') +
+              '<g transform="translate(176 52)"><ellipse cx="-17" cy="0" rx="17" ry="11" transform="rotate(-20 -17 0)" fill="#c9b6ff"/><ellipse cx="17" cy="0" rx="17" ry="11" transform="rotate(20 17 0)" fill="#c9b6ff"/><ellipse cx="-20" cy="-4" rx="8" ry="3.5" transform="rotate(-20 -20 -4)" fill="#fff" opacity=".5"/><circle r="8" fill="#a98bf5"/><circle cx="-2" cy="-2" r="2.5" fill="#fff" opacity=".7"/></g>' +
+              '<g class="m-spark" style="--d:.9s"><path d="M52 50L55 57L62 58L56.5 63L58 70L52 66L46 70L47.5 63L42 58L49 57Z" fill="#ffe08a" stroke="#fff" stroke-width="1.3"/></g>',
+      brows: '<path d="M72 104Q86 98 100 104M142 102Q154 94 168 100" stroke="#3a2433" stroke-width="4" stroke-linecap="round" fill="none"/>',
+      eyes: 'wink', glasses: '#b79cff',
+      mouth: '<path d="M106 152Q113 166 120 155Q127 166 134 152" stroke="#c4456f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><ellipse cx="127" cy="164" rx="5" ry="3.5" fill="#ff9db8"/>',
+      extra: '<circle cx="108" cy="214" r="4" fill="#fff" opacity=".85"/><circle cx="132" cy="214" r="4" fill="#fff" opacity=".85"/>',
+      lower: '<path d="M80 252Q120 270 160 252L172 284Q120 298 68 284Z" fill="url(#n-sk2)"/><path d="M80 252Q120 270 160 252" stroke="#fff" stroke-opacity=".7" stroke-width="2" fill="none"/>' }
+  ];
+
+  function mascotSVG(m) {
+    var id = m.id;
+    var eye = function (x) {
+      return '<ellipse cx="' + x + '" cy="130" rx="15" ry="19" fill="#2a1d44"/><ellipse cx="' + x + '" cy="132" rx="12.5" ry="16" fill="url(#' + id + '-ey)"/>' +
+        '<circle cx="' + (x - 5) + '" cy="124" r="5.5" fill="#fff"/><circle cx="' + (x + 5) + '" cy="139" r="2.8" fill="#fff" opacity=".9"/>';
+    };
+    var eyes = m.eyes === 'wink'
+      ? '<g class="m-eyes">' + eye(86) + '</g><path d="M139 133Q154 119 169 133" stroke="#2a1d44" stroke-width="5" stroke-linecap="round" fill="none"/>'
+      : '<g class="m-eyes">' + eye(86) + eye(154) + '</g>';
+    var glasses = m.glasses
+      ? '<g fill="#fff" fill-opacity=".14" stroke="' + m.glasses + '" stroke-width="4"><circle cx="86" cy="130" r="25"/><circle cx="154" cy="130" r="25"/></g><path d="M111 128Q120 122 129 128" stroke="' + m.glasses + '" stroke-width="4" fill="none"/>' : '';
+    var arms = '<path d="M94 214Q72 238 76 264" stroke="url(#' + id + '-of)" stroke-width="22" stroke-linecap="round" fill="none"/><circle cx="76" cy="267" r="12" fill="url(#' + id + '-sk)"/>' +
+      '<g class="m-wave"><path d="M146 214Q182 210 190 168" stroke="url(#' + id + '-of)" stroke-width="22" stroke-linecap="round" fill="none"/><circle cx="190" cy="161" r="13" fill="url(#' + id + '-sk)"/><circle cx="179" cy="158" r="5.5" fill="url(#' + id + '-sk)"/></g>';
+    if (m.flip) arms = '<g transform="translate(240 0) scale(-1 1)">' + arms + '</g>';
+    return '<svg viewBox="0 0 240 330" role="img" aria-label="شخصية ' + m.first + ' الكرتونية، تميمة المشروع">' +
+      '<defs>' +
+      '<radialGradient id="' + id + '-sk" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#fff3ea"/><stop offset=".55" stop-color="#ffdcc4"/><stop offset="1" stop-color="#f3b895"/></radialGradient>' +
+      '<linearGradient id="' + id + '-hr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m.hairL + '"/><stop offset="1" stop-color="' + m.hairD + '"/></linearGradient>' +
+      '<linearGradient id="' + id + '-of" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + m.o1 + '"/><stop offset="1" stop-color="' + m.o2 + '"/></linearGradient>' +
+      '<linearGradient id="' + id + '-sk2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m.sk2[0] + '"/><stop offset="1" stop-color="' + m.sk2[1] + '"/></linearGradient>' +
+      '<radialGradient id="' + id + '-ey" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="' + m.iris[0] + '"/><stop offset="1" stop-color="' + m.iris[1] + '"/></radialGradient>' +
+      '<linearGradient id="' + id + '-cd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m.card[0] + '"/><stop offset="1" stop-color="' + m.card[1] + '"/></linearGradient>' +
+      '<filter id="' + id + '-bl"><feGaussianBlur stdDeviation="3.5"/></filter></defs>' +
+      '<g class="m-sh" style="--d:' + m.d + '"><ellipse cx="120" cy="316" rx="80" ry="14" fill="#b79cff" opacity=".5" filter="url(#' + id + '-bl)"/><ellipse cx="120" cy="316" rx="68" ry="10" fill="none" stroke="#ff9fcf" stroke-opacity=".8" stroke-width="2"/></g>' +
+      '<g class="m-bob" style="--d:' + m.d + '">' +
+      '<g class="m-hairb" style="--d:' + m.d + '">' + m.back + '</g>' +
+      '<rect x="95" y="266" width="20" height="38" rx="9" fill="' + m.pants + '"/><rect x="125" y="266" width="20" height="38" rx="9" fill="' + m.pants + '"/>' +
+      '<ellipse cx="103" cy="306" rx="16" ry="9" fill="' + m.shoe + '"/><ellipse cx="137" cy="306" rx="16" ry="9" fill="' + m.shoe + '"/><ellipse cx="98" cy="302" rx="7" ry="3" fill="#fff" opacity=".7"/><ellipse cx="132" cy="302" rx="7" ry="3" fill="#fff" opacity=".7"/>' +
+      '<rect x="84" y="192" width="72" height="84" rx="30" fill="url(#' + id + '-of)"/><ellipse cx="104" cy="214" rx="14" ry="22" fill="#fff" opacity=".32"/>' + m.lower + m.extra + arms +
+      '<path d="M98 206L120 234L142 206" stroke="' + m.lace + '" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+      '<g class="m-card" style="--d:' + m.d + '"><rect x="82" y="232" width="76" height="40" rx="9" fill="url(#' + id + '-cd)" stroke="' + m.lace + '" stroke-width="2.2"/><rect x="111" y="236" width="18" height="4" rx="2" fill="' + m.lace + '" opacity=".6"/>' +
+      '<text x="120" y="263" text-anchor="middle" font-family="Reem Kufi, IBM Plex Sans Arabic, sans-serif" font-weight="700" font-size="22" fill="' + m.c2 + '">' + m.first + '</text></g>' +
+      '<g class="m-head" style="--d:' + m.d + '"><ellipse cx="120" cy="120" rx="84" ry="76" fill="url(#' + id + '-sk)"/><ellipse cx="120" cy="188" rx="64" ry="9" fill="#e59a86" opacity=".18"/>' +
+      '<ellipse cx="62" cy="158" rx="15" ry="9" fill="#ff8fb8" opacity=".5"/><ellipse cx="178" cy="158" rx="15" ry="9" fill="#ff8fb8" opacity=".5"/>' +
+      m.brows + eyes + glasses + m.mouth + m.fringe +
+      '<ellipse cx="86" cy="76" rx="36" ry="16" transform="rotate(-22 86 76)" fill="#fff" opacity=".14"/></g></g></svg>';
+  }
+
+  var creditsBuilt = false;
+  function buildCredits() {
+    if (creditsBuilt) return; creditsBuilt = true;
+    $('#cr-mascots').innerHTML = '<div class="cr-emblem" aria-hidden="true">f(x)</div>' + MASCOTS.map(function (m, i) {
+      return '<div class="mascot" style="--i:' + i + ';--c1:' + m.c1 + ';--c2:' + m.c2 + '">' + mascotSVG(m) +
+        '</div>';
+    }).join('');
+    var fx = $('#cr-fx'), h = [], cols = ['#4fb0da', '#a98bf5', '#ee7fb8', '#e8a93a'];
+    var syms = ['π', '∑', '∞', '√', 'x²', 'sin', 'cos', 'θ', '∫', 'f(x)', 'Δ', '±', '÷', '=', 'tan', 'e', '2x+1', '%'];
+    for (var i = 0; i < 34; i++) h.push('<i class="st" style="left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;animation-delay:' + (Math.random() * 2.6).toFixed(2) + 's"></i>');
+    for (var j = 0; j < 20; j++) h.push('<span class="sym" style="left:' + (Math.random() * 92 + 2).toFixed(1) + '%;top:' + (Math.random() * 90 + 2).toFixed(1) + '%;font-size:' + (16 + Math.random() * 20).toFixed(0) + 'px;color:' + cols[j % 4] + ';animation-duration:' + (7 + Math.random() * 6).toFixed(1) + 's;animation-delay:-' + (Math.random() * 8).toFixed(1) + 's">' + syms[j % syms.length] + '</span>');
+    fx.innerHTML = h.join('');
+  }
+  function showCredits() {
+    if (!allDone()) { toast('تظهر هذه الشاشة بعد إكمال كل المحطات.', 'bad'); backToMap(); return; }
+    buildCredits();
+    go('credits');
+    var fx = $('#cr-fx');
+    Array.prototype.forEach.call(fx.querySelectorAll('.bst'), function (n) { n.remove(); });
+    if (!reduceMotion) {
+      var b = '', e = ['✨', '⭐', '💜', '🩵', '💖'];
+      for (var k = 0; k < 16; k++) { var a = k / 16 * Math.PI * 2, r = 120 + Math.random() * 140; b += '<span class="bst" style="--x:' + (Math.cos(a) * r).toFixed(0) + 'px;--y:' + (Math.sin(a) * r * 0.8).toFixed(0) + 'px;animation-delay:' + (0.5 + Math.random() * 0.4).toFixed(2) + 's">' + e[k % 5] + '</span>'; }
+      fx.insertAdjacentHTML('beforeend', b);
+    }
+  }
+
+  /* ---------- الشهادة ---------- */
+  function showCert() {
+    if (!allDone()) { toast('الشهادة تظهر بعد إكمال كل المحطات.', 'bad'); backToMap(); return; }
+    if (!state.finishedAt) { state.finishedAt = Date.now(); save(); }
+    go('cert');
+    var inp = $('#cert-name');
+    inp.value = state.name;
+    drawCertWhenReady();
+  }
+  var fontsReady = null;
+  function loadFonts() {
+    if (fontsReady) return fontsReady;
+    var list = ['700 48px "Reem Kufi"', '400 28px "IBM Plex Sans Arabic"', '600 28px "IBM Plex Sans Arabic"', '500 22px "IBM Plex Mono"'];
+    var loads = list.map(function (f) { return document.fonts && document.fonts.load ? document.fonts.load(f, 'شفرة الدوال Function') : Promise.resolve(); });
+    fontsReady = Promise.race([Promise.all(loads), new Promise(function (r) { setTimeout(r, 2500); })]);
+    return fontsReady;
+  }
+  function drawCertWhenReady() { loadFonts().then(drawCert, drawCert); }
+
+  function certDate() {
+    var d = new Date(state.finishedAt || Date.now());
+    try { return d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' }); }
+    catch (e) { return d.toISOString().slice(0, 10); }
+  }
+
+  function drawCert() {
+    var c = $('#cert-canvas');
+    var W = 1600, H = 1130;
+    c.width = W; c.height = H;
+    var ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#fff3fb'); g.addColorStop(0.6, '#f1e8ff'); g.addColorStop(1, '#e0f1ff');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    var rand = rng(5), i;
+    for (i = 0; i < 140; i++) {
+      ctx.fillStyle = 'rgba(200,170,245,' + (0.15 + rand() * 0.5).toFixed(2) + ')';
+      ctx.fillRect(rand() * W, rand() * H * 0.6, 2, 2);
+    }
+    /* أفق المدينة مضاء */
+    for (i = 0; i < 26; i++) {
+      var bw = 50 + rand() * 90, bh = 90 + rand() * 230, bx = i * 64 - 20 + rand() * 20, by = H - bh;
+      ctx.fillStyle = 'rgba(214,200,251,0.95)'; ctx.fillRect(bx, by, bw, bh);
+      for (var wy = by + 12; wy < H - 10; wy += 20) {
+        for (var wx = bx + 8; wx < bx + bw - 10; wx += 16) {
+          if (rand() < 0.55) {
+            ctx.fillStyle = ['#8fd6f2', '#c1a9ff', '#ffe3a3'][Math.floor(rand() * 3)];
+            ctx.globalAlpha = 0.55 + rand() * 0.4;
+            ctx.fillRect(wx, wy, 7, 10);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+    }
+    var fade = ctx.createLinearGradient(0, H * 0.35, 0, H);
+    fade.addColorStop(0, 'rgba(253,245,255,0.96)'); fade.addColorStop(0.6, 'rgba(253,245,255,0.72)'); fade.addColorStop(1, 'rgba(253,245,255,0.15)');
+    ctx.fillStyle = fade; ctx.fillRect(0, H * 0.3, W, H * 0.7);
+
+    /* الإطار */
+    ctx.lineWidth = 3; ctx.strokeStyle = '#5fc3e8'; ctx.shadowColor = '#5fc3e8'; ctx.shadowBlur = 16;
+    ctx.strokeRect(46, 46, W - 92, H - 92);
+    ctx.shadowBlur = 0; ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(183,156,255,0.8)';
+    ctx.strokeRect(66, 66, W - 132, H - 132);
+    ctx.lineWidth = 6; ctx.strokeStyle = '#e8962e';
+    [[46, 46, 1, 1], [W - 46, 46, -1, 1], [46, H - 46, 1, -1], [W - 46, H - 46, -1, -1]].forEach(function (p) {
+      ctx.beginPath(); ctx.moveTo(p[0], p[1] + 70 * p[3]); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0] + 70 * p[2], p[1]); ctx.stroke();
+    });
+
+    ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    var cx = W / 2;
+    ctx.fillStyle = '#8a82ad'; ctx.font = '500 26px "IBM Plex Mono", monospace'; ctx.direction = 'ltr';
+    ctx.fillText('FUNCTION CODE  •  CERTIFICATE OF COMPLETION', cx, 150);
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#3b3260'; ctx.font = '700 118px "Reem Kufi", "IBM Plex Sans Arabic", serif';
+    ctx.shadowColor = '#5fc3e8'; ctx.shadowBlur = 28;
+    ctx.fillText('شفرة الدوال', cx, 290); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#e8962e'; ctx.font = '600 44px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('شهادة إتمام المهمة', cx, 370);
+    ctx.fillStyle = '#3b3260'; ctx.font = '600 50px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('مبروك! لقد نجحتِ في إعادة تشغيل المدينة', cx, 480);
+    ctx.fillStyle = '#8a82ad'; ctx.font = '400 32px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('تُمنح هذه الشهادة إلى المهندسة', cx, 560);
+
+    var name = (state.name || '').trim();
+    ctx.fillStyle = name ? '#2b86ad' : 'rgba(122,113,153,0.7)';
+    ctx.font = '700 84px "Reem Kufi", "IBM Plex Sans Arabic", serif';
+    ctx.shadowColor = '#5fc3e8'; ctx.shadowBlur = name ? 18 : 0;
+    ctx.fillText(name || 'اسم الطالبة', cx, 665); ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(95,195,232,0.6)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 360, 695); ctx.lineTo(cx + 360, 695); ctx.stroke();
+
+    ctx.fillStyle = '#3b3260'; ctx.font = '400 32px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('لإتمامها جميع محطات المدينة، وحلّها الشفرات الرياضية،', cx, 765);
+    ctx.fillText('واستعادة الطاقة بنسبة 100%.', cx, 812);
+
+    ctx.fillStyle = '#e8962e'; ctx.font = '600 30px "IBM Plex Mono", monospace'; ctx.direction = 'ltr';
+    ctx.fillText(STATIONS.map(function (s) { return s.reward.code; }).join('   '), cx, 890);
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#8a82ad'; ctx.font = '400 30px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('تاريخ الإكمال: ' + certDate(), cx, 950);
+    ctx.fillStyle = '#3b3260'; ctx.font = '600 34px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText('الرياضيات هي الشفرة التي تُضيء المدن.', cx, 1030);
+  }
+
+  function saveCertPng() {
+    var c = $('#cert-canvas');
+    claudeUse('downloads').then(function (dl) {
+      if (!dl) { toast('الحفظ غير متاح هنا. التقطي لقطة شاشة للشهادة.', 'bad'); return; }
+      c.toBlob(function (blob) {
+        if (!blob) { toast('تعذّر إنشاء الصورة.', 'bad'); return; }
+        dl.save({ filename: 'function-code-certificate.png', data: blob }).then(
+          function () { toast('تم حفظ الشهادة.', 'ok'); },
+          function (err) { if (!err || err.code !== 'declined') toast('تعذّر حفظ الشهادة. التقطي لقطة شاشة بدلًا من ذلك.', 'bad'); }
+        );
+      }, 'image/png');
+    });
+  }
+  function claudeUse(name) {
+    try { if (window.claude && window.claude.use) return window.claude.use(name).catch(function () { return null; }); } catch (e) { /* ignore */ }
+    return Promise.resolve(null);
+  }
+
+  /* ---------- إعادة البدء ---------- */
+  function resetAll() {
+    state = fresh();
+    storeClear();
+    save();
+    selected = 0; currentStation = 0;
+    document.body.classList.remove('relight');
+    paintCity(); renderHud(); renderIntro();
+    go('intro');
+  }
+
+  /* ------------------------------------------------------------------
+     ربط الأحداث والتشغيل
+     ------------------------------------------------------------------ */
+  function bind() {
+    $('#btn-start').addEventListener('click', function () {
+      if (doneCount() > 0 || state.intro) { selected = firstOpenIndex(); renderMap(); renderHud(); go('map'); return; }
+      showStory();
+    });
+    $('#btn-story-next').addEventListener('click', function () {
+      state.intro = true; save();
+      selected = 0; renderMap(); renderHud(); go('map');
+    });
+    $('#btn-skip-story').addEventListener('click', function () {
+      state.intro = true; save();
+      selected = 0; renderMap(); renderHud(); go('map');
+    });
+    $('#btn-st-back').addEventListener('click', backToMap);
+    $('#explore').addEventListener('change', function (e) {
+      state.explore = e.target.checked; save();
+      selected = Math.min(selected, STATIONS.length - 1);
+      renderMap();
+      toast(state.explore ? 'وضع الاستكشاف: كل المحطات متاحة. الشهادة تتطلب إكمالها جميعًا.' : 'عاد ترتيب المحطات المتسلسل.', '');
+    });
+    $('#btn-cert').addEventListener('click', showCert);
+    $('#btn-to-cert').addEventListener('click', showCert);
+    $('#btn-finale-map').addEventListener('click', function () { selected = STATIONS.length - 1; renderMap(); go('map'); });
+    $('#btn-cert-map').addEventListener('click', function () { renderMap(); go('map'); });
+    $('#btn-finale-credits').addEventListener('click', showCredits);
+    $('#btn-credits-home').addEventListener('click', function () { renderIntro(); go('intro'); });
+    $('#btn-credits-cert').addEventListener('click', showCert);
+    $('#btn-credits-fin').addEventListener('click', showFinale);
+    $('#cert-name').addEventListener('input', function (e) {
+      state.name = e.target.value.slice(0, 60); save();
+      if (!bind.raf) bind.raf = requestAnimationFrame(function () { bind.raf = 0; drawCert(); });
+    });
+    $('#btn-save-cert').addEventListener('click', saveCertPng);
+
+    var ask = $('#reset-ask'), yes = $('#reset-yes'), no = $('#reset-no'), box = $('#reset-confirm');
+    ask.addEventListener('click', function () { ask.hidden = true; box.hidden = false; yes.focus(); });
+    no.addEventListener('click', function () { box.hidden = true; ask.hidden = false; ask.focus(); });
+    yes.addEventListener('click', function () { box.hidden = true; ask.hidden = false; resetAll(); });
+    $('#btn-home').addEventListener('click', function () { renderIntro(); go('intro'); });
+  }
+
+  function boot() {
+    buildCity();
+    paintCity();
+    bind();
+    renderHud();
+    renderIntro();
+    if (state.intro || doneCount() > 0) {
+      selected = firstOpenIndex();
+      renderMap();
+      go('map');
+    } else {
+      go('intro');
+    }
+    document.documentElement.setAttribute('data-ready', '1');
+  }
+
+  FC.engine = { state: function () { return state; }, power: power, boot: boot };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+
+</script>
+
+</body></html>
